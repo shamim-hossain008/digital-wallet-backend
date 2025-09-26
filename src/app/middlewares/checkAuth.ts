@@ -1,4 +1,4 @@
-import { NextFunction, Request } from "express";
+import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status-codes";
 import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../config/env";
@@ -41,6 +41,20 @@ export const checkAuth =
           `User is ${isUserExist.isActive}`
         );
       }
+
+      if (isUserExist.isDeleted) {
+        throw new AppError(httpStatus.BAD_REQUEST, "User is deleted");
+      }
+
+      if (!authRoles.includes(verifiedToken.role)) {
+        throw new AppError(
+          403,
+          "You are not permitted to view this route!!!!!!!"
+        );
+      }
+
+      req.user = verifiedToken;
+      next();
     } catch (error) {
       next(error);
     }
