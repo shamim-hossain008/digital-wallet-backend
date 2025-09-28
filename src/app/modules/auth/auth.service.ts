@@ -1,10 +1,18 @@
 import bcrypt from "bcryptjs";
+import httpStatus from "http-status-codes";
 import { envVars } from "../../config/env";
+import AppError from "../../errorHelpers/appError";
 import { generateToken } from "../../utils/jwt";
 import { IAuthUser } from "./auth.interface";
 import { AuthModel } from "./auth.model";
+import { WalletService } from "../wallet/wallet.service";
+
 
 const register = async (payload: IAuthUser) => {
+  const isUserExist = await AuthModel.findOne({ email: payload.email });
+  if (isUserExist) {
+    throw new AppError(httpStatus.CONFLICT, "Email already registered");
+  }
   const saltRounds = parseInt(envVars.BCRYPT_SALT_ROUND);
   const hashedPassword = await bcrypt.hash(payload.password, saltRounds);
 
@@ -12,6 +20,10 @@ const register = async (payload: IAuthUser) => {
 
   //   todo
   //  created wallet with 50tk bonus balance
+  if (user.role === "USER" || user.role === "AGENT") {
+    await WalletService.createWallet(user._id.toString()); 
+  }
+
   return user;
 };
 
