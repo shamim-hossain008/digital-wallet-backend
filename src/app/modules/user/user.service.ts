@@ -59,6 +59,13 @@ const updatedUser = async (
   return newUpdateUser;
 };
 
+const getMe = async (userId: string) => {
+  const user = await UserModel.findById(userId).select("-password");
+
+  return {
+    data: user,
+  };
+};
 // Delete user
 const deleteUser = async (id: string): Promise<IUser | null> => {
   return UserModel.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
@@ -68,4 +75,5 @@ export const UserService = {
   getSingleUser,
   updatedUser,
   deleteUser,
+  getMe,
 };

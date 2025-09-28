@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status-codes";
 import { JwtPayload } from "jsonwebtoken";
 import AppError from "../../errorHelpers/appError";
@@ -52,6 +52,20 @@ const updatedUser = catchAsync(async (req: Request, res: Response) => {
     data: user,
   });
 });
+
+const getMe = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const decodedToken = req.user as JwtPayload;
+    const result = await UserService.getMe(decodedToken.userId);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Your profile retrieved successfully",
+      data: result.data,
+    });
+  }
+);
 // delete user
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id;
@@ -73,4 +87,5 @@ export const UserController = {
   getSingleUser,
   updatedUser,
   deleteUser,
+  getMe
 };
