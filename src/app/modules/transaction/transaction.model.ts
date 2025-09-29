@@ -1,5 +1,5 @@
 import { model, Schema } from "mongoose";
-import { ITransaction, TransactionType } from "./transaction.validation";
+import { ITransaction, TransactionType } from "./transaction.interface";
 
 const TransactionSchema = new Schema<ITransaction>(
   {

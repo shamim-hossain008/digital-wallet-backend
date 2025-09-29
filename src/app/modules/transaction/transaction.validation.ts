@@ -1,19 +1,14 @@
-import { Types } from "mongoose";
+import z from "zod";
 
-export enum TransactionType {
-  DEPOSIT = "DEPOSIT",
-  WITHDRAW = "WITHDRAW",
-  TRANSFER = "TRANSFER",
-  CASH_IN = "CASH_IN",
-  CASH_OUT = "CASH_OUT",
-}
+export const depositSchema = z.object({
+  amount: z.number().positive("Amount must be greater than zero"),
+});
 
-export interface ITransaction {
-  _id: Types.ObjectId;
-  sender?: Types.ObjectId;
-  receiver?: Types.ObjectId;
-  amount: number;
-  type: TransactionType;
-  status?: "PENDING" | "COMPLETED" | "FAILED";
-  timestamp?: Date;
-}
+export const withdrawSchema = z.object({
+  amount: z.number().positive("Amount must be greater then zero"),
+});
+
+export const transferSchema = z.object({
+  receiverId: z.string().length(24, "Invalid receiver ID"),
+  amount: z.number().positive("Amount must be greater then zero"),
+});
