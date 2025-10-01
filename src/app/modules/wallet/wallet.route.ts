@@ -21,4 +21,5 @@ router.patch(
   WalletController.unblockWallet
 );
 
+router.get("/all", checkAuth(Role.ADMIN), WalletController.getAllWallets);
 export const WalletRoutes = router;

@@ -125,6 +125,13 @@ const cashOut = async (agentId: string, userId: string, amount: number) => {
   ]);
   return userWallet;
 };
+
+const getAllTransactions = async () => {
+  return TransactionModel.find()
+    .sort("-timestamp")
+    .populate("sender", "email role")
+    .populate("receiver", "email role");
+};
 export const TransactionService = {
   deposit,
   withdraw,
@@ -132,4 +139,5 @@ export const TransactionService = {
   getMyTransactions,
   cashIn,
   cashOut,
+  getAllTransactions,
 };

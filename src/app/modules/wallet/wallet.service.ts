@@ -26,10 +26,14 @@ const unblockWallet = async (userId: string): Promise<IWallet | null> => {
     { new: true }
   );
 };
+const getAllWallets = async (): Promise<IWallet[]> => {
+  return WalletModel.find().populate("user", "email role");
+};
 
 export const WalletService = {
   createWallet,
   getWalletByUser,
   blockWallet,
   unblockWallet,
+  getAllWallets,
 };

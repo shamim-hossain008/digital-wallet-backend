@@ -93,6 +93,17 @@ const cashOut = catchAsync(async (req: Request, res: Response) => {
     data: wallet,
   });
 });
+
+const getAllTransactions = catchAsync(async (req: Request, res: Response) => {
+  const transactions = await TransactionService.getAllTransactions();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "All transactions retrieved",
+    data: transactions,
+  });
+});
 export const TransactionController = {
   deposit,
   withdraw,
@@ -100,4 +111,5 @@ export const TransactionController = {
   getMyTransactions,
   cashIn,
   cashOut,
+  getAllTransactions,
 };

@@ -13,6 +13,7 @@ router.get(
   checkAuth(Role.USER, Role.AGENT),
   TransactionController.getMyTransactions
 );
+router.get('/all', checkAuth(Role.ADMIN), TransactionController.getAllTransactions)
 router.post("/cash-in", checkAuth(Role.AGENT), TransactionController.cashIn);
 router.post("/cash-out", checkAuth(Role.AGENT), TransactionController.cashOut);
 
