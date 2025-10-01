@@ -86,9 +86,50 @@ const getMyTransactions = async (userId: string) => {
   return transactions;
 };
 
+const cashIn = async (agentId: string, userId: string, amount: number) => {
+  const userWallet = await WalletModel.findOne({ user: userId });
+  if (!userWallet || userWallet.isBlocked)
+    throw new AppError(httpStatus.FORBIDDEN, "User wallet  blocked");
+
+  userWallet.balance = Number(userWallet.balance) + amount;
+  await Promise.all([
+    userWallet.save(),
+    TransactionModel.create({
+      sender: agentId,
+      receiver: userId,
+      amount,
+      type: TransactionType.CASH_IN,
+    }),
+  ]);
+  return userWallet;
+};
+
+const cashOut = async (agentId: string, userId: string, amount: number) => {
+  const userWallet = await WalletModel.findOne({ user: userId });
+  if (!userWallet || userWallet.isBlocked)
+    throw new AppError(httpStatus.FORBIDDEN, "User wallet blocked ");
+
+  if (Number(userWallet.balance) < amount)
+    throw new AppError(httpStatus.BAD_REQUEST, "Insufficient balance");
+
+  userWallet.balance = Number(userWallet.balance) - amount;
+
+  await Promise.all([
+    userWallet.save(),
+    TransactionModel.create({
+      sender: userId,
+      receiver: agentId,
+      amount,
+      type: TransactionType.CASH_OUT,
+    }),
+  ]);
+  return userWallet;
+};
 export const TransactionService = {
   deposit,
   withdraw,
   transfer,
   getMyTransactions,
+  cashIn,
+  cashOut,
 };

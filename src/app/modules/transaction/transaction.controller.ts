@@ -61,9 +61,43 @@ const getMyTransactions = catchAsync(async (req: Request, res: Response) => {
     data: transactions,
   });
 });
+
+const cashIn = catchAsync(async (req: Request, res: Response) => {
+  const { receiverId, amount } = transferSchema.parse(req.body);
+  const wallet = await TransactionService.cashIn(
+    req.user!.userId,
+    receiverId,
+    amount
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Cash-in successful",
+    data: wallet,
+  });
+});
+
+const cashOut = catchAsync(async (req: Request, res: Response) => {
+  const { receiverId, amount } = transferSchema.parse(req.body);
+  const wallet = await TransactionService.cashOut(
+    req.user!.userId,
+    receiverId,
+    amount
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Cash-out successful",
+    data: wallet,
+  });
+});
 export const TransactionController = {
   deposit,
   withdraw,
   transfer,
   getMyTransactions,
+  cashIn,
+  cashOut,
 };
