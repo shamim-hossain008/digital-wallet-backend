@@ -47,20 +47,33 @@ const transfer = async (
   const senderWallet = await WalletModel.findOne({ user: senderId });
   const receiverWallet = await WalletModel.findOne({ user: receiverId });
 
+  const fee = 5;
+  const total = amount + fee;
+
   if (!senderWallet || senderWallet.isBlocked)
     throw new AppError(httpStatus.FORBIDDEN, "Sender wallet blocked");
+
   if (!receiverWallet || receiverWallet.isBlocked)
     throw new AppError(httpStatus.FORBIDDEN, "Receiver wallet blocked");
-  if (Number(senderWallet.balance) < amount)
-    throw new AppError(httpStatus.BAD_REQUEST, "Insufficient balance");
 
-  senderWallet.balance = Number(senderWallet.balance) - amount;
+  // if (Number(senderWallet.balance) < amount)
+  //   throw new AppError(httpStatus.BAD_REQUEST, "Insufficient balance");
+
+  if (Number(senderWallet.balance) < total) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Insufficient balance including fee"
+    );
+  }
+
+  senderWallet.balance = Number(senderWallet.balance) - total;
 
   receiverWallet.balance = Number(receiverWallet.balance) + amount;
 
   await Promise.all([
     senderWallet.save(),
     receiverWallet.save(),
+
     TransactionModel.create({
       sender: senderId,
       receiver: receiverId,
@@ -90,14 +103,19 @@ const cashIn = async (agentId: string, userId: string, amount: number) => {
   const userWallet = await WalletModel.findOne({ user: userId });
   if (!userWallet || userWallet.isBlocked)
     throw new AppError(httpStatus.FORBIDDEN, "User wallet  blocked");
+  // add commission
+  const commissionRate = 0.02;
+  const commission = amount * commissionRate;
 
   userWallet.balance = Number(userWallet.balance) + amount;
   await Promise.all([
     userWallet.save(),
+
     TransactionModel.create({
       sender: agentId,
       receiver: userId,
       amount,
+      commission,
       type: TransactionType.CASH_IN,
     }),
   ]);

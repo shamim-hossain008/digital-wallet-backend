@@ -3,10 +3,9 @@ import httpStatus from "http-status-codes";
 import { envVars } from "../../config/env";
 import AppError from "../../errorHelpers/appError";
 import { generateToken } from "../../utils/jwt";
+import { WalletService } from "../wallet/wallet.service";
 import { IAuthUser } from "./auth.interface";
 import { AuthModel } from "./auth.model";
-import { WalletService } from "../wallet/wallet.service";
-
 
 const register = async (payload: IAuthUser) => {
   const isUserExist = await AuthModel.findOne({ email: payload.email });
@@ -21,7 +20,7 @@ const register = async (payload: IAuthUser) => {
   //   todo
   //  created wallet with 50tk bonus balance
   if (user.role === "USER" || user.role === "AGENT") {
-    await WalletService.createWallet(user._id.toString()); 
+    await WalletService.createWallet(user._id.toString());
   }
 
   return user;
@@ -53,7 +52,24 @@ const login = async (email: string, password: string) => {
   return { accessToken, refreshToken, user };
 };
 
+const approveAgent = async (agentId: string) => {
+  return AuthModel.findByIdAndUpdate(
+    agentId,
+    { isApproved: true },
+    { new: true }
+  );
+};
+
+const suspendAgent = async (agentId: string) => {
+  return AuthModel.findByIdAndUpdate(
+    agentId,
+    { isSuspended: true },
+    { new: true }
+  );
+};
 export const AuthService = {
   register,
   login,
+  approveAgent,
+  suspendAgent,
 };

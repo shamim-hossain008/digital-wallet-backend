@@ -13,6 +13,7 @@ export interface ITransaction {
   sender?: Types.ObjectId;
   receiver?: Types.ObjectId;
   amount: number;
+  commission?: number;
   type: TransactionType;
   status?: "PENDING" | "COMPLETED" | "FAILED";
   timestamp?: Date;

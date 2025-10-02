@@ -6,6 +6,7 @@ const TransactionSchema = new Schema<ITransaction>(
     sender: { type: Schema.Types.ObjectId, ref: "User" },
     receiver: { type: Schema.Types.ObjectId, ref: "User" },
     amount: { type: Number, required: true },
+    commission: { type: Number },
     type: {
       type: String,
       enum: Object.values(TransactionType),

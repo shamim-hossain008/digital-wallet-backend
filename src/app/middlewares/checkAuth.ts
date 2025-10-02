@@ -46,6 +46,12 @@ export const checkAuth =
         throw new AppError(httpStatus.BAD_REQUEST, "User is deleted");
       }
 
+      {
+        if (isUserExist.role === "AGENT" && isUserExist.isSuspended) {
+          throw new AppError(httpStatus.FORBIDDEN, "Agent is suspended");
+        }
+      }
+
       if (!authRoles.includes(verifiedToken.role)) {
         throw new AppError(
           403,

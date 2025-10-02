@@ -10,4 +10,5 @@ export interface IAuthUser {
   role: Role;
   password: string;
   isApproved?: boolean;
+  isSuspended?: boolean;
 }
