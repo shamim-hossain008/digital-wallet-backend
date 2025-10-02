@@ -95,13 +95,15 @@ const cashOut = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllTransactions = catchAsync(async (req: Request, res: Response) => {
-  const transactions = await TransactionService.getAllTransactions();
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const result = await TransactionService.getAllTransactions(page, limit);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "All transactions retrieved",
-    data: transactions,
+    data: result,
   });
 });
 export const TransactionController = {

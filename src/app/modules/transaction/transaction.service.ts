@@ -144,11 +144,18 @@ const cashOut = async (agentId: string, userId: string, amount: number) => {
   return userWallet;
 };
 
-const getAllTransactions = async () => {
-  return TransactionModel.find()
+const getAllTransactions = async (page = 1, limit = 10) => {
+  const skip = (page - 1) * limit;
+  const transactions = await TransactionModel.find()
     .sort("-timestamp")
+    .skip(skip)
+    .limit(limit)
     .populate("sender", "email role")
     .populate("receiver", "email role");
+
+  const total = await TransactionModel.countDocuments();
+
+  return { total, page, limit, transactions };
 };
 export const TransactionService = {
   deposit,
