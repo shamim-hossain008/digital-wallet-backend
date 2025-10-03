@@ -12,3 +12,4 @@ export const transferSchema = z.object({
   receiverId: z.string().length(24, "Invalid receiver ID"),
   amount: z.number().positive("Amount must be greater then zero"),
 });
+

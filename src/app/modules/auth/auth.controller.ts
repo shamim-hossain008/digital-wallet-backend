@@ -50,7 +50,7 @@ const suspendAgent = catchAsync(async (req: Request, res: Response) => {
 
   if (!agentId)
     throw new AppError(httpStatus.BAD_REQUEST, "Agent ID is required");
-  const agent = await AuthService.suspendAgent(agentId); 
+  const agent = await AuthService.suspendAgent(agentId);
   logAction("Agent suspended", req.user!.userId, { target: agentId });
 
   sendResponse(res, {
@@ -60,9 +60,6 @@ const suspendAgent = catchAsync(async (req: Request, res: Response) => {
     data: agent,
   });
 });
-
-
-
 
 export const AuthController = {
   register,

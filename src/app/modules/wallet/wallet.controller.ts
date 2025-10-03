@@ -21,8 +21,13 @@ const getMyWallet = catchAsync(async (req: Request, res: Response) => {
 });
 
 const blockWallet = catchAsync(async (req: Request, res: Response) => {
+  const adminId = req.user?.userId;
   const userId = req.params.userId;
-  const wallet = await WalletService.blockWallet(userId as string);
+
+  if (!adminId) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid token payload");
+  }
+  const wallet = await WalletService.blockWallet(adminId, userId as string);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -33,8 +38,13 @@ const blockWallet = catchAsync(async (req: Request, res: Response) => {
 });
 
 const unblockWallet = catchAsync(async (req: Request, res: Response) => {
+  const adminId = req.user?.userId;
   const userId = req.params.userId;
-  const wallet = await WalletService.unblockWallet(userId as string);
+
+  if (!adminId) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid token payload");
+  }
+  const wallet = await WalletService.unblockWallet(adminId, userId as string);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

@@ -1,6 +1,7 @@
 import httpStatus from "http-status-codes";
 import AppError from "../../errorHelpers/appError";
 import { IPaginatedResponse } from "../../interfaces/pagination.interface";
+import { logAction } from "../../utils/logger";
 import { IWallet } from "./wallet.interface";
 import { WalletModel } from "./wallet.model";
 
@@ -9,23 +10,49 @@ const createWallet = async (userId: string): Promise<IWallet> => {
   if (existing)
     throw new AppError(httpStatus.CONFLICT, "Wallet already exists");
 
-  return WalletModel.create({ user: userId });
+  const wallet = await WalletModel.create({ user: userId });
+
+  logAction("Wallet created", userId, { WalletId: wallet._id });
+
+  return wallet;
 };
 
 const getWalletByUser = async (userId: string): Promise<IWallet | null> => {
   return WalletModel.findOne({ user: userId });
 };
 
-const blockWallet = async (userId: string): Promise<IWallet | null> => {
-  return WalletModel.findOneAndUpdate({ user: userId }, { isBlocked: true });
+const blockWallet = async (
+  adminId: string,
+  userId: string
+): Promise<IWallet | null> => {
+  const wallet = await WalletModel.findOneAndUpdate(
+    { user: userId },
+    { isBlocked: true },
+    { new: true }
+  );
+
+  if (wallet) {
+    logAction("Wallet blocked", adminId, { target: userId });
+  }
+
+  return wallet;
 };
 
-const unblockWallet = async (userId: string): Promise<IWallet | null> => {
-  return WalletModel.findOneAndUpdate(
+const unblockWallet = async (
+  adminId: string,
+  userId: string
+): Promise<IWallet | null> => {
+  const wallet = await WalletModel.findOneAndUpdate(
     { user: userId },
     { isBlocked: false },
     { new: true }
   );
+
+  if (wallet) {
+    logAction("Wallet unblocked", adminId, { target: userId });
+  }
+
+  return wallet;
 };
 const getAllWallets = async (
   page: number = 1,

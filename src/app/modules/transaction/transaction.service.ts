@@ -1,5 +1,6 @@
 import httpStatus from "http-status-codes";
 import AppError from "../../errorHelpers/appError";
+import { logAction } from "../../utils/logger";
 import { WalletModel } from "../wallet/wallet.model";
 import { TransactionType } from "./transaction.interface";
 import { TransactionModel } from "./transaction.model";
@@ -81,6 +82,8 @@ const transfer = async (
       type: TransactionType.TRANSFER,
     }),
   ]);
+  // for log
+  logAction("Transfer", senderId, { receiver: receiverId, amount, fee });
   return { senderWallet, receiverWallet };
 };
 
@@ -119,6 +122,8 @@ const cashIn = async (agentId: string, userId: string, amount: number) => {
       type: TransactionType.CASH_IN,
     }),
   ]);
+
+  logAction("Cash-in", agentId, { receiver: userId, amount, commission });
   return userWallet;
 };
 
