@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import httpStatus from "http-status-codes";
 import AppError from "../../errorHelpers/appError";
 import { catchAsync } from "../../utils/catchAsync";
+import { logAction } from "../../utils/logger";
 import { sendResponse } from "../../utils/sendResponse";
 import { AuthService } from "./auth.service";
 
@@ -34,6 +35,7 @@ const approveAgent = catchAsync(async (req: Request, res: Response) => {
     throw new AppError(httpStatus.BAD_REQUEST, "Agent ID is required");
 
   const agent = await AuthService.approveAgent(agentId);
+  logAction("Agent approved", req.user!.userId, { target: agentId });
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -48,7 +50,8 @@ const suspendAgent = catchAsync(async (req: Request, res: Response) => {
 
   if (!agentId)
     throw new AppError(httpStatus.BAD_REQUEST, "Agent ID is required");
-  const agent = await AuthService.suspendAgent(agentId);
+  const agent = await AuthService.suspendAgent(agentId); 
+  logAction("Agent suspended", req.user!.userId, { target: agentId });
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -57,6 +60,9 @@ const suspendAgent = catchAsync(async (req: Request, res: Response) => {
     data: agent,
   });
 });
+
+
+
 
 export const AuthController = {
   register,

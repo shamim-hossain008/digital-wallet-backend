@@ -1,5 +1,6 @@
 import httpStatus from "http-status-codes";
 import AppError from "../../errorHelpers/appError";
+import { IPaginatedResponse } from "../../interfaces/pagination.interface";
 import { IWallet } from "./wallet.interface";
 import { WalletModel } from "./wallet.model";
 
@@ -26,8 +27,20 @@ const unblockWallet = async (userId: string): Promise<IWallet | null> => {
     { new: true }
   );
 };
-const getAllWallets = async (): Promise<IWallet[]> => {
-  return WalletModel.find().populate("user", "email role");
+const getAllWallets = async (
+  page: number = 1,
+  limit: number = 10
+): Promise<IPaginatedResponse<IWallet>> => {
+  const skip = (page - 1) * limit;
+
+  const wallets = await WalletModel.find()
+    .skip(skip)
+    .limit(limit)
+    .populate("user", "email role");
+
+  const total = await WalletModel.countDocuments();
+
+  return { total, page, limit, data: wallets };
 };
 
 export const WalletService = {
