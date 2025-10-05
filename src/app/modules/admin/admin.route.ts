@@ -16,5 +16,10 @@ router.get(
   AdminController.getCommissionPayouts
 );
 
-export const AdminRoutes = router;
+router.get(
+  "/commission-payouts/export",
+  checkAuth(Role.ADMIN),
+  AdminController.exportCommissionCSV
+);
 
+export const AdminRoutes = router;
