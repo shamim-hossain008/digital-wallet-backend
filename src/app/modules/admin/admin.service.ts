@@ -16,7 +16,7 @@ const getCommissionPayouts = async () => {
     { $match: { type: { $in: ["CASH_IN", "CASH_OUT"] } } },
     {
       $group: {
-        _id: "sender",
+        _id: "$sender",
         totalCommission: { $sum: "$commission" },
         transactionCount: { $sum: 1 },
       },
@@ -29,10 +29,16 @@ const getCommissionPayouts = async () => {
         as: "agent",
       },
     },
-    { $unionWith: "$agent" },
+
+    {
+      $unwind: {
+        path: "$agent",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
     {
       $project: {
-        agentId: "$agent_id",
+        agentId: "$_id",
         name: "$agent.name",
         email: "$agent.email",
         totalCommission: 1,
