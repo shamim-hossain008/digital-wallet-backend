@@ -21,9 +21,12 @@ export const checkAuth =
         envVars.JWT_ACCESS_SECRET
       ) as JwtPayload;
 
-      const isUserExist = await UserModel.findOne({
-        email: verifiedToken.email,
-      });
+      // const isUserExist = await UserModel.findOne({
+      //   email: verifiedToken.email,
+      // });
+      const isUserExist = await UserModel.findById(verifiedToken.id);
+      // console.log("user found", isUserExist);
+      // const isUserExist = await UserModel.findById(verifiedToken.id);
 
       if (!isUserExist) {
         throw new AppError(httpStatus.BAD_REQUEST, "User dose not exist");

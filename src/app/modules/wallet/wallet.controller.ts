@@ -6,7 +6,7 @@ import { sendResponse } from "../../utils/sendResponse";
 import { WalletService } from "./wallet.service";
 
 const getMyWallet = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user?.userId;
+  const userId = req.user?.id;
   if (!userId) {
     throw new AppError(httpStatus.UNAUTHORIZED, "Invalid token payload");
   }
@@ -21,7 +21,7 @@ const getMyWallet = catchAsync(async (req: Request, res: Response) => {
 });
 
 const blockWallet = catchAsync(async (req: Request, res: Response) => {
-  const adminId = req.user?.userId;
+  const adminId = req.user?.id;
   const userId = req.params.userId;
 
   if (!adminId) {
@@ -38,7 +38,7 @@ const blockWallet = catchAsync(async (req: Request, res: Response) => {
 });
 
 const unblockWallet = catchAsync(async (req: Request, res: Response) => {
-  const adminId = req.user?.userId;
+  const adminId = req.user?.id;
   const userId = req.params.userId;
 
   if (!adminId) {

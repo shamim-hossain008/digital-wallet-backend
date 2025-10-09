@@ -26,6 +26,11 @@ export const registerUserZodSchema = z.object({
       message: "Password must contain at least 1 special character.",
     }),
 
+  role: z
+    // enum(["ADMIN", "GUIDE", "USER", "SUPER_ADMIN"])
+    .enum(Object.values(Role) as [string])
+    .optional(),
+
   address: z
     .string()
     .refine((val) => typeof val === "string", {

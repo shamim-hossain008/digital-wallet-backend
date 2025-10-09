@@ -11,7 +11,7 @@ import {
 
 const deposit = catchAsync(async (req: Request, res: Response) => {
   const { amount } = depositSchema.parse(req.body);
-  const wallet = await TransactionService.deposit(req.user!.userId, amount);
+  const wallet = await TransactionService.deposit(req.user!.id, amount);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

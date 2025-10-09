@@ -14,12 +14,11 @@ const startServer = async () => {
       console.log(`Server is listening to port: ${envVars.PORT}`);
     });
   } catch (err) {
-    console.error("Failed to connect BD",err);
-    process.exit(1)
+    console.error("Failed to connect BD", err);
+    process.exit(1);
   }
 };
 
 (async () => {
   await startServer();
 })();
-

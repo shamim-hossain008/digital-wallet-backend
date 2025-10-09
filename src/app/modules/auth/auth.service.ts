@@ -3,19 +3,20 @@ import httpStatus from "http-status-codes";
 import { envVars } from "../../config/env";
 import AppError from "../../errorHelpers/appError";
 import { generateToken } from "../../utils/jwt";
+import { UserModel } from "../user/user.model";
 import { WalletService } from "../wallet/wallet.service";
 import { IAuthUser } from "./auth.interface";
-import { AuthModel } from "./auth.model";
 
-const register = async (payload: IAuthUser) => {
-  const isUserExist = await AuthModel.findOne({ email: payload.email });
+const register = async (payload: IAuthUser) => { 
+  console.log("Incoming role:", payload.role)
+  const isUserExist = await UserModel.findOne({ email: payload.email });
   if (isUserExist) {
     throw new AppError(httpStatus.CONFLICT, "Email already registered");
   }
   const saltRounds = parseInt(envVars.BCRYPT_SALT_ROUND);
   const hashedPassword = await bcrypt.hash(payload.password, saltRounds);
 
-  const user = await AuthModel.create({ ...payload, password: hashedPassword });
+  const user = await UserModel.create({ ...payload, password: hashedPassword });
 
   //   todo
   //  created wallet with 50tk bonus balance
@@ -27,15 +28,21 @@ const register = async (payload: IAuthUser) => {
 };
 
 const login = async (email: string, password: string) => {
-  const user = await AuthModel.findOne({ email });
+  const user = await UserModel.findOne({ email });
 
   if (!user) throw new Error("User not found");
 
+  if (!user.password) {
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "User password is missing"
+    );
+  }
   const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) throw new Error("Invalid credentials");
 
-  const payload = { id: user._id, role: user.role };
+  const payload = { id: user._id.toString(), role: user.role };
 
   const accessToken = generateToken(
     payload,
@@ -53,7 +60,7 @@ const login = async (email: string, password: string) => {
 };
 
 const approveAgent = async (agentId: string) => {
-  return AuthModel.findByIdAndUpdate(
+  return UserModel.findByIdAndUpdate(
     agentId,
     { isApproved: true },
     { new: true }
@@ -61,7 +68,7 @@ const approveAgent = async (agentId: string) => {
 };
 
 const suspendAgent = async (agentId: string) => {
-  return AuthModel.findByIdAndUpdate(
+  return UserModel.findByIdAndUpdate(
     agentId,
     { isSuspended: true },
     { new: true }
