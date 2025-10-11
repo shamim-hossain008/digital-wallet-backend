@@ -4,6 +4,7 @@ import { IPaginatedResponse } from "../../interfaces/pagination.interface";
 import { logAction } from "../../utils/logger";
 import { IWallet } from "./wallet.interface";
 import { WalletModel } from "./wallet.model";
+import { Types } from "mongoose";
 
 const createWallet = async (userId: string): Promise<IWallet> => {
   const existing = await WalletModel.findOne({ user: userId });
@@ -26,10 +27,14 @@ const blockWallet = async (
   userId: string
 ): Promise<IWallet | null> => {
   const wallet = await WalletModel.findOneAndUpdate(
-    { user: userId },
+    { user: new Types.ObjectId (userId) },
     { isBlocked: true },
     { new: true }
   );
+  
+  if(!wallet) {
+    throw new AppError(httpStatus.NOT_FOUND,"Wallet not found")
+  }
 
   if (wallet) {
     logAction("Wallet blocked", adminId, { target: userId });

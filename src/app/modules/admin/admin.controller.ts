@@ -55,7 +55,7 @@ const exportCommissionCSV = catchAsync(async (req: Request, res: Response) => {
   );
 
   const parser = new Parser();
-  const csv = parser.parse(payouts);
+  const csv = parser.parse(payouts.payouts);
 
   res.header("Content-Type", "text/csv");
   res.attachment("commission_payouts.csv");

@@ -10,6 +10,8 @@ router.get(
   checkAuth(Role.USER, Role.AGENT),
   WalletController.getMyWallet
 );
+router.get("/all", checkAuth(Role.ADMIN), WalletController.getAllWallets);
+
 router.patch(
   "/block/:userId",
   checkAuth(Role.ADMIN),
@@ -21,5 +23,4 @@ router.patch(
   WalletController.unblockWallet
 );
 
-router.get("/all", checkAuth(Role.ADMIN), WalletController.getAllWallets);
 export const WalletRoutes = router;

@@ -12,22 +12,22 @@ router.get("/all-users", checkAuth(Role.ADMIN), UserController.getAllUsers);
 router.get("/me", checkAuth(...Object.values(Role)), UserController.getMe);
 // single user route
 router.get(
-  "/id",
+  "/:id",
   checkAuth(...Object.values(Role)),
   UserController.getSingleUser
 );
 // update user
 router.patch(
-  "/id",
+  "/:id",
   validateRequest(updatedUserZodSchema),
   checkAuth(...Object.values(Role)),
   UserController.updatedUser
 );
 // delete user
 router.delete(
-  "/id",
+  "/:id",
 
-  checkAuth(...Object.values(Role.ADMIN)),
+  checkAuth(Role.ADMIN),
   UserController.deleteUser
 );
 

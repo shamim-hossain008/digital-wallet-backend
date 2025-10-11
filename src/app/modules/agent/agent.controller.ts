@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
 import httpStatus from "http-status-codes";
+import { JwtPayload } from "jsonwebtoken";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { AgentService } from "./agent.service";
 
 const getAgentDashboard = catchAsync(async (req: Request, res: Response) => {
-  const agentId = req.user!.userId;
+  const agentId = (req.user as JwtPayload).id;
 
   const dashboard = await AgentService.getAgentDashboard(agentId);
 

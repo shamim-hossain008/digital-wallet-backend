@@ -2,13 +2,30 @@ import { TransactionModel } from "../transaction/transaction.model";
 
 const getTransactionSummary = async () => {
   const totalTransactions = await TransactionModel.countDocuments();
+
+  const types = ["DEPOSIT", "WITHDRAW", "TRANSFER", "CASH_IN", "CASH_OUT"];
+  const counts = await Promise.all(
+    types.map((type) =>
+      TransactionModel.countDocuments({ type }).then((count) => ({
+        type,
+        count,
+      }))
+    )
+  );
+
   const totalVolume = await TransactionModel.aggregate([
     { $group: { _id: null, total: { $sum: "$amount" } } },
   ]);
-  return {
+
+  const summary: Record<string, number> = {
     totalTransactions,
     totalVolume: totalVolume[0]?.total || 0,
   };
+  counts.forEach(({ type, count }) => {
+    summary[`total ${type.slice(0).toLocaleLowerCase()}s`] = count;
+  });
+
+  return summary;
 };
 
 const getCommissionPayouts = async (
@@ -16,14 +33,14 @@ const getCommissionPayouts = async (
   toDate?: string,
   status?: string,
   page: number = 1,
-  limit: number = 1
+  limit: number = 10
 ) => {
   const matchStage: any = {
     type: { $in: ["CASH_IN", "CASH_OUT"] },
   };
   if (fromData && toDate) {
     matchStage.createAt = {
-      $get: new Date(fromData),
+      $gte: new Date(fromData),
       $lte: new Date(toDate),
     };
   }
@@ -59,6 +76,7 @@ const getCommissionPayouts = async (
       },
       {
         $project: {
+          _id: 0,
           agentId: "$agent._id",
           name: "$agent.name",
           email: "$agent.email",

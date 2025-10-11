@@ -1,4 +1,5 @@
 import httpStatus from "http-status-codes";
+import { Types } from "mongoose";
 import AppError from "../../errorHelpers/appError";
 import { logAction } from "../../utils/logger";
 import { WalletModel } from "../wallet/wallet.model";
@@ -7,6 +8,7 @@ import { TransactionModel } from "./transaction.model";
 
 const deposit = async (userId: string, amount: number) => {
   const wallet = await WalletModel.findOne({ user: userId });
+
   if (!wallet || wallet.isBlocked)
     throw new AppError(httpStatus.FORBIDDEN, "Wallet not accessible");
   wallet.balance = Number(wallet.balance) + amount;
@@ -22,9 +24,13 @@ const deposit = async (userId: string, amount: number) => {
 };
 
 const withdraw = async (userId: string, amount: number) => {
-  const wallet = await WalletModel.findOne({ user: userId });
+  const wallet = await WalletModel.findOne({
+    user: new Types.ObjectId(userId),
+  });
+
   if (!wallet || wallet.isBlocked)
     throw new AppError(httpStatus.FORBIDDEN, "Wallet not accessible");
+
   if (Number(wallet.balance) < amount)
     throw new AppError(httpStatus.BAD_REQUEST, "Insufficient balance");
 
@@ -45,8 +51,12 @@ const transfer = async (
   receiverId: string,
   amount: number
 ) => {
-  const senderWallet = await WalletModel.findOne({ user: senderId });
-  const receiverWallet = await WalletModel.findOne({ user: receiverId });
+  const senderWallet = await WalletModel.findOne({
+    user: new Types.ObjectId(senderId),
+  });
+  const receiverWallet = await WalletModel.findOne({
+    user: new Types.ObjectId(receiverId),
+  });
 
   const fee = 5;
   const total = amount + fee;
@@ -162,6 +172,7 @@ const getAllTransactions = async (page = 1, limit = 10) => {
 
   return { total, page, limit, transactions };
 };
+
 export const TransactionService = {
   deposit,
   withdraw,

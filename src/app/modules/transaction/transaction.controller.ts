@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import httpStatus from "http-status-codes";
+import { JwtPayload } from "jsonwebtoken";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { TransactionService } from "./transaction.service";
@@ -23,7 +24,10 @@ const deposit = catchAsync(async (req: Request, res: Response) => {
 
 const withdraw = catchAsync(async (req: Request, res: Response) => {
   const { amount } = withdrawSchema.parse(req.body);
-  const wallet = await TransactionService.withdraw(req.user!.userId, amount);
+
+  const userId = (req.user as JwtPayload).id;
+
+  const wallet = await TransactionService.withdraw(userId, amount);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -35,8 +39,11 @@ const withdraw = catchAsync(async (req: Request, res: Response) => {
 
 const transfer = catchAsync(async (req: Request, res: Response) => {
   const { receiverId, amount } = transferSchema.parse(req.body);
+
+  const senderId = (req.user as JwtPayload).id;
+
   const result = await TransactionService.transfer(
-    req.user!.userId,
+    senderId,
     receiverId,
     amount
   );
@@ -50,9 +57,8 @@ const transfer = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMyTransactions = catchAsync(async (req: Request, res: Response) => {
-  const transactions = await TransactionService.getMyTransactions(
-    req.user!.userId
-  );
+  const userId = (req.user as JwtPayload).id;
+  const transactions = await TransactionService.getMyTransactions(userId);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -64,11 +70,8 @@ const getMyTransactions = catchAsync(async (req: Request, res: Response) => {
 
 const cashIn = catchAsync(async (req: Request, res: Response) => {
   const { receiverId, amount } = transferSchema.parse(req.body);
-  const wallet = await TransactionService.cashIn(
-    req.user!.userId,
-    receiverId,
-    amount
-  );
+  const agentId = (req.user as JwtPayload).id;
+  const wallet = await TransactionService.cashIn(agentId, receiverId, amount);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -80,11 +83,8 @@ const cashIn = catchAsync(async (req: Request, res: Response) => {
 
 const cashOut = catchAsync(async (req: Request, res: Response) => {
   const { receiverId, amount } = transferSchema.parse(req.body);
-  const wallet = await TransactionService.cashOut(
-    req.user!.userId,
-    receiverId,
-    amount
-  );
+  const agentId = (req.user as JwtPayload).id;
+  const wallet = await TransactionService.cashOut(agentId, receiverId, amount);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -106,6 +106,7 @@ const getAllTransactions = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
 export const TransactionController = {
   deposit,
   withdraw,

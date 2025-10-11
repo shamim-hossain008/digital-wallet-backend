@@ -56,7 +56,7 @@ const updatedUser = catchAsync(async (req: Request, res: Response) => {
 const getMe = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
-    const result = await UserService.getMe(decodedToken.userId);
+    const result = await UserService.getMe(decodedToken.id);
 
     sendResponse(res, {
       success: true,
@@ -87,5 +87,5 @@ export const UserController = {
   getSingleUser,
   updatedUser,
   deleteUser,
-  getMe
+  getMe,
 };

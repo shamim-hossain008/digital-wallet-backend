@@ -1,14 +1,16 @@
 import bcrypt from "bcryptjs";
 import httpStatus from "http-status-codes";
+import { Types } from "mongoose";
 import { envVars } from "../../config/env";
 import AppError from "../../errorHelpers/appError";
 import { generateToken } from "../../utils/jwt";
 import { UserModel } from "../user/user.model";
+import { WalletModel } from "../wallet/wallet.model";
 import { WalletService } from "../wallet/wallet.service";
 import { IAuthUser } from "./auth.interface";
 
-const register = async (payload: IAuthUser) => { 
-  console.log("Incoming role:", payload.role)
+const register = async (payload: IAuthUser) => {
+  console.log("Incoming role:", payload.role);
   const isUserExist = await UserModel.findOne({ email: payload.email });
   if (isUserExist) {
     throw new AppError(httpStatus.CONFLICT, "Email already registered");
@@ -60,19 +62,47 @@ const login = async (email: string, password: string) => {
 };
 
 const approveAgent = async (agentId: string) => {
-  return UserModel.findByIdAndUpdate(
+  const agent = await UserModel.findByIdAndUpdate(
     agentId,
-    { isApproved: true },
+    { isApproved: true, isSuspended: false },
     { new: true }
   );
+  if (agent) {
+    await WalletModel.findOneAndUpdate(
+      { user: new Types.ObjectId(agentId) },
+      { isBlocked: false },
+      { new: true }
+    );
+  }
+  return agent;
 };
 
 const suspendAgent = async (agentId: string) => {
-  return UserModel.findByIdAndUpdate(
+  const agent = await UserModel.findById(agentId);
+  if (!agent) {
+    throw new AppError(httpStatus.NOT_FOUND, "Agent not found");
+  }
+  if (!agent.isApproved) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "Agent must be approved before suspension"
+    );
+  }
+
+  const updateAgent = await UserModel.findByIdAndUpdate(
     agentId,
     { isSuspended: true },
     { new: true }
   );
+  if (updateAgent) {
+    await WalletModel.findOneAndUpdate(
+      { user: new Types.ObjectId(agentId) },
+      { isBlocked: true },
+      { new: true }
+    );
+  }
+
+  return updateAgent;
 };
 export const AuthService = {
   register,

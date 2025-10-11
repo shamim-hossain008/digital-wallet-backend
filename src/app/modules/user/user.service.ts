@@ -70,6 +70,8 @@ const getMe = async (userId: string) => {
 const deleteUser = async (id: string): Promise<IUser | null> => {
   return UserModel.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
 };
+
+
 export const UserService = {
   getAllUsers,
   getSingleUser,
