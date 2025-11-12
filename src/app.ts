@@ -22,11 +22,15 @@ app.use(
   })
 );
 
+// ✅ Allow all OPTIONS preflights
+app.options("*", cors());
+
 app.use(express.json());
 app.use(cookieParser());
 
 app.use("/api/v1", router);
 app.use(rateLimiter);
+
 
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json({
