@@ -16,6 +16,7 @@ const loadEnvVariables = () => {
         "JWT_REFRESH_SECRET",
         "JWT_REFRESH_EXPIRES",
         "BCRYPT_SALT_ROUND",
+        "FRONTEND_URL",
     ];
     requiredEnvVariables.forEach((key) => {
         if (!process.env[key]) {
@@ -31,6 +32,7 @@ const loadEnvVariables = () => {
         JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
         JWT_REFRESH_EXPIRES: process.env.JWT_REFRESH_EXPIRES,
         BCRYPT_SALT_ROUND: process.env.BCRYPT_SALT_ROUND,
+        FRONTEND_URL: process.env.FRONTEND_URL,
     };
 };
 exports.envVars = loadEnvVariables();

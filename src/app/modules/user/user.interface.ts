@@ -7,6 +7,11 @@ export enum IsActive {
   BLOCKED = "BLOCKED",
 }
 
+export interface IAuthProvider {
+  provider: "google" | "credentials"; // "Google", "Credential"
+  providerId: string;
+}
+
 export interface IUser {
   _id?: Types.ObjectId;
   name: string;
@@ -21,4 +26,5 @@ export interface IUser {
   isSuspended?: boolean;
   isApproved?: boolean;
   role: Role;
+  auths: IAuthProvider[];
 }

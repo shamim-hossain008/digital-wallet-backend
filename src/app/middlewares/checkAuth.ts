@@ -10,16 +10,37 @@ import { verifyToken } from "../utils/jwt";
 export const checkAuth =
   (...authRoles: string[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
+    //for testing
+    console.log("====================================");
+    console.log("🔐 CHECK AUTH MIDDLEWARE TRIGGERED");
+    console.log("URL:", req.method, req.originalUrl);
+
+    console.log("Headers:", req.headers);
+    console.log("Authorization Header:", req.headers.authorization);
+
     try {
-      const accessToken = req.headers.authorization;
+      const authHeader = req.headers.authorization;
+
+      // Token Logs
+      if (!authHeader) {
+        console.log("❌ No Authorization header found");
+        throw new AppError(httpStatus.FORBIDDEN, "No token received");
+      }
+
+      const accessToken = authHeader?.split(" ")[1]; // ✅ Extract token
+      console.log("Access Token:", accessToken);
 
       if (!accessToken) {
+        console.log("❌ Authorization header exists but token missing");
+
         throw new AppError(httpStatus.FORBIDDEN, "No token received");
       }
       const verifiedToken = verifyToken(
         accessToken,
         envVars.JWT_ACCESS_SECRET
       ) as JwtPayload;
+
+      console.log("✅ Token Decoded:", verifiedToken);
 
       // const isUserExist = await UserModel.findOne({
       //   email: verifiedToken.email,

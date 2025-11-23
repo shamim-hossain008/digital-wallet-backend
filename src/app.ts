@@ -1,40 +1,64 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import dotenv from "dotenv";
 import express, { Application, Request, Response } from "express";
 import { envVars } from "./app/config/env";
-import { rateLimiter } from "./app/middlewares/rateLimiter";
 import { router } from "./app/routes";
+
+dotenv.config();
 
 const app: Application = express();
 
-app.set("trust proxy", 1);
-
-// Configure CORS
-app.use(
-  cors({
-    origin: [
-      envVars.FRONTEND_URL, // your local dev frontend
-      // your deployed frontend
-    ],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-
-// ✅ Allow all OPTIONS preflights
-app.options("*", cors());
-
+/**
+ * 1️⃣ Body parsers
+ */
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+/**
+ * 2️⃣ Cookies parser
+ */
 app.use(cookieParser());
 
+/**
+ * 3️⃣ CORS CONFIG (Express 4 Friendly)
+ */
+const corsOptions = {
+  origin: envVars.FRONTEND_URL || "http://localhost:5173",
+  methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+};
+
+/**
+ * 4️⃣ Apply CORS
+ */
+app.use(cors(corsOptions));
+
+/**
+ * 5️⃣ Handle Preflight Requests Explicitly
+ */
+app.options("*", cors(corsOptions));
+
+/**
+ * 6️⃣ Debug logs
+ */
+app.use((req, res, next) => {
+  console.log("Incoming:", req.method, req.path);
+  next();
+});
+
+/**
+ * 7️⃣ Routes
+ */
 app.use("/api/v1", router);
-app.use(rateLimiter);
 
-
+/**
+ * 8️⃣ Root route
+ */
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json({
-    message: "Welcome to Digital Wallet API server.....................! ",
+    message: "Welcome to Digital Wallet API server!",
   });
 });
 

@@ -4,13 +4,24 @@ import { Types } from "mongoose";
 import { envVars } from "../../config/env";
 import AppError from "../../errorHelpers/appError";
 import { generateToken } from "../../utils/jwt";
+import { createNewAccessTokenWithRefreshToken } from "../../utils/userTokens";
 import { UserModel } from "../user/user.model";
 import { WalletModel } from "../wallet/wallet.model";
 import { WalletService } from "../wallet/wallet.service";
 import { IAuthUser } from "./auth.interface";
 
+const getNewAccessToken = async (refreshToken: string) => {
+  const newAccessToken = await createNewAccessTokenWithRefreshToken(
+    refreshToken
+  );
+
+  return {
+    accessToken: newAccessToken,
+  };
+};
+
+
 const register = async (payload: IAuthUser) => {
-  console.log("Incoming role:", payload.role);
   const isUserExist = await UserModel.findOne({ email: payload.email });
   if (isUserExist) {
     throw new AppError(httpStatus.CONFLICT, "Email already registered");
@@ -109,4 +120,5 @@ export const AuthService = {
   login,
   approveAgent,
   suspendAgent,
+  getNewAccessToken,
 };

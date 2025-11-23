@@ -11,12 +11,27 @@ const user_interface_1 = require("../modules/user/user.interface");
 const user_model_1 = require("../modules/user/user.model");
 const jwt_1 = require("../utils/jwt");
 const checkAuth = (...authRoles) => async (req, res, next) => {
+    //for testing
+    console.log("====================================");
+    console.log("🔐 CHECK AUTH MIDDLEWARE TRIGGERED");
+    console.log("URL:", req.method, req.originalUrl);
+    console.log("Headers:", req.headers);
+    console.log("Authorization Header:", req.headers.authorization);
     try {
-        const accessToken = req.headers.authorization;
+        const authHeader = req.headers.authorization;
+        // Token Logs
+        if (!authHeader) {
+            console.log("❌ No Authorization header found");
+            throw new appError_1.default(http_status_codes_1.default.FORBIDDEN, "No token received");
+        }
+        const accessToken = authHeader?.split(" ")[1]; // ✅ Extract token
+        console.log("Access Token:", accessToken);
         if (!accessToken) {
+            console.log("❌ Authorization header exists but token missing");
             throw new appError_1.default(http_status_codes_1.default.FORBIDDEN, "No token received");
         }
         const verifiedToken = (0, jwt_1.verifyToken)(accessToken, env_1.envVars.JWT_ACCESS_SECRET);
+        console.log("✅ Token Decoded:", verifiedToken);
         // const isUserExist = await UserModel.findOne({
         //   email: verifiedToken.email,
         // });

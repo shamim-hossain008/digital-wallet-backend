@@ -7,13 +7,15 @@ import { Role } from "./auth.interface";
 
 const router = Router();
 
+router.post("/login", AuthController.login);
+router.post("/logout", AuthController.logout);
+
 router.post(
   "/register",
   validateRequest(registerUserZodSchema),
   AuthController.register
 );
 
-router.post("/login", AuthController.login);
 router.patch(
   "/approve/:id",
   checkAuth(Role.ADMIN),

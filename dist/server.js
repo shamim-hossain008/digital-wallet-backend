@@ -4,8 +4,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importDefault(require("mongoose"));
-const env_1 = require("./app/config/env");
 const app_1 = __importDefault(require("./app"));
+const env_1 = require("./app/config/env");
+// ✅ Log loaded environment variables
+console.log("✅ Loaded environment variables:");
+console.log("PORT:", env_1.envVars.PORT);
+console.log("FRONTEND_URL:", env_1.envVars.FRONTEND_URL);
+console.log("DB_URL:", env_1.envVars.DB_URL);
+console.log("NODE_ENV:", env_1.envVars.NODE_ENV);
+console.log("JWT_ACCESS_SECRET:", env_1.envVars.JWT_ACCESS_SECRET);
+console.log("JWT_REFRESH_SECRET:", env_1.envVars.JWT_REFRESH_SECRET);
+console.log("BCRYPT_SALT_ROUND:", env_1.envVars.BCRYPT_SALT_ROUND);
 let server;
 const startServer = async () => {
     try {

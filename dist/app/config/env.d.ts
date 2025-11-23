@@ -7,6 +7,7 @@ interface EnvConfig {
     JWT_REFRESH_SECRET: string;
     JWT_REFRESH_EXPIRES: string;
     BCRYPT_SALT_ROUND: string;
+    FRONTEND_URL: string;
 }
 export declare const envVars: EnvConfig;
 export {};

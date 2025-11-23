@@ -21,7 +21,13 @@ const register = (0, catchAsync_1.catchAsync)(async (req, res) => {
 });
 const login = (0, catchAsync_1.catchAsync)(async (req, res) => {
     const { email, password } = req.body;
+    console.log("Login request body:", req.body);
     const result = await auth_service_1.AuthService.login(email, password);
+    res.cookie("refreshToken", result.refreshToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+    });
     (0, sendResponse_1.sendResponse)(res, {
         statusCode: http_status_codes_1.default.OK,
         success: true,
