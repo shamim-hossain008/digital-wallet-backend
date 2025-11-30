@@ -10,7 +10,7 @@ const catchAsync_1 = require("../../utils/catchAsync");
 const sendResponse_1 = require("../../utils/sendResponse");
 const wallet_service_1 = require("./wallet.service");
 const getMyWallet = (0, catchAsync_1.catchAsync)(async (req, res) => {
-    const userId = req.user?.id;
+    const userId = req.user._id?.toString();
     if (!userId) {
         throw new appError_1.default(http_status_codes_1.default.UNAUTHORIZED, "Invalid token payload");
     }
@@ -23,8 +23,8 @@ const getMyWallet = (0, catchAsync_1.catchAsync)(async (req, res) => {
     });
 });
 const blockWallet = (0, catchAsync_1.catchAsync)(async (req, res) => {
-    const adminId = req.user?.id;
-    const userId = req.params.userId;
+    const adminId = req.user._id?.toString();
+    const userId = req.user._id?.toString();
     if (!adminId) {
         throw new appError_1.default(http_status_codes_1.default.UNAUTHORIZED, "Invalid token payload");
     }
@@ -37,7 +37,7 @@ const blockWallet = (0, catchAsync_1.catchAsync)(async (req, res) => {
     });
 });
 const unblockWallet = (0, catchAsync_1.catchAsync)(async (req, res) => {
-    const adminId = req.user?.id;
+    const adminId = req.user._id?.toString();
     const userId = req.params.userId;
     if (!adminId) {
         throw new appError_1.default(http_status_codes_1.default.UNAUTHORIZED, "Invalid token payload");

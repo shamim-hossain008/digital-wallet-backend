@@ -24,7 +24,7 @@ const checkAuth = (...authRoles) => async (req, res, next) => {
             console.log("❌ No Authorization header found");
             throw new appError_1.default(http_status_codes_1.default.FORBIDDEN, "No token received");
         }
-        const accessToken = authHeader?.split(" ")[1]; // ✅ Extract token
+        const accessToken = authHeader?.split(" ")[1]; // Extract token
         console.log("Access Token:", accessToken);
         if (!accessToken) {
             console.log("❌ Authorization header exists but token missing");

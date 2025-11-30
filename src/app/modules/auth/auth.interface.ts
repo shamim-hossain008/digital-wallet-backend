@@ -1,3 +1,5 @@
+import { JwtPayload } from "jsonwebtoken";
+
 export enum Role {
   ADMIN = "ADMIN",
   USER = "USER",
@@ -12,3 +14,4 @@ export interface IAuthUser {
   isApproved?: boolean;
   isSuspended?: boolean;
 }
+

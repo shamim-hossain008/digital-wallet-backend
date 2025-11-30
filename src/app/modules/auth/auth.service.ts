@@ -20,6 +20,7 @@ const getNewAccessToken = async (refreshToken: string) => {
   };
 };
 
+// REGISTER USER
 
 const register = async (payload: IAuthUser) => {
   const isUserExist = await UserModel.findOne({ email: payload.email });
@@ -39,6 +40,8 @@ const register = async (payload: IAuthUser) => {
 
   return user;
 };
+
+//LOGIN USER (Email + Password)
 
 const login = async (email: string, password: string) => {
   const user = await UserModel.findOne({ email });
@@ -71,6 +74,8 @@ const login = async (email: string, password: string) => {
 
   return { accessToken, refreshToken, user };
 };
+
+// ADMIN — APPROVE AGENT
 
 const approveAgent = async (agentId: string) => {
   const agent = await UserModel.findByIdAndUpdate(

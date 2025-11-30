@@ -11,7 +11,13 @@ const userSchema = new Schema<IUser>(
       unique: true,
       trim: true,
     },
-    password: { type: String, required: true },
+    password: {
+      type: String,
+      required: function () {
+        // Require password only if auths array is empty
+        return !this.auths || this.auths.length === 0;
+      },
+    },
     role: { type: String, enum: Object.values(Role), default: Role.USER },
     phone: { type: String },
     picture: { type: String },
@@ -25,6 +31,16 @@ const userSchema = new Schema<IUser>(
     isVerified: { type: Boolean, default: true },
     isSuspended: { type: Boolean, default: false },
     isApproved: { type: Boolean, default: false },
+
+    auths: {
+      type: [
+        {
+          provider: { type: String },
+          providerId: { type: String },
+        },
+      ],
+      default: [],
+    },
   },
   {
     timestamps: true,

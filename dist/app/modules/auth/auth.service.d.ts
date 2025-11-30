@@ -25,5 +25,8 @@ export declare const AuthService: {
     }> & {
         __v: number;
     }) | null>;
+    getNewAccessToken: (refreshToken: string) => Promise<{
+        accessToken: string;
+    }>;
 };
 //# sourceMappingURL=auth.service.d.ts.map

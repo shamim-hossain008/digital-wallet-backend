@@ -3,11 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.router = void 0;
 const express_1 = require("express");
 const admin_route_1 = require("../modules/admin/admin.route");
+const agent_route_1 = require("../modules/agent/agent.route");
 const auth_route_1 = require("../modules/auth/auth.route");
 const transaction_route_1 = require("../modules/transaction/transaction.route");
 const user_route_1 = require("../modules/user/user.route");
 const wallet_route_1 = require("../modules/wallet/wallet.route");
-const agent_route_1 = require("../modules/agent/agent.route");
 exports.router = (0, express_1.Router)();
 const moduleRoutes = [
     {
@@ -37,5 +37,6 @@ const moduleRoutes = [
 ];
 moduleRoutes.forEach((route) => {
     exports.router.use(route.path, route.route);
+    console.log(`Mounted ${route.path} routes`); // <-- TEMP LOG
 });
 //# sourceMappingURL=index.js.map

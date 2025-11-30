@@ -3,7 +3,7 @@
     /* File Layout */
     "rootDir": "./src",
     "outDir": "./dist",
-    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "typeRoots": ["./src/types", "./node_modules/@types"],
 
     /* Environment Settings */
     "target": "ES2022",

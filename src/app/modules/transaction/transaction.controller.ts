@@ -9,10 +9,15 @@ import {
   transferSchema,
   withdrawSchema,
 } from "./transaction.validation";
+import { IUser } from "../user/user.interface";
 
 const deposit = catchAsync(async (req: Request, res: Response) => {
   const { amount } = depositSchema.parse(req.body);
-  const wallet = await TransactionService.deposit(req.user!.id, amount);
+ const wallet = await TransactionService.deposit(
+   (req.user as IUser)._id!.toString(),
+   amount
+ );
+
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

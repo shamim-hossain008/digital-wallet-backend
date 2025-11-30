@@ -10,11 +10,18 @@ const mongoose_1 = require("mongoose");
 const env_1 = require("../../config/env");
 const appError_1 = __importDefault(require("../../errorHelpers/appError"));
 const jwt_1 = require("../../utils/jwt");
+const userTokens_1 = require("../../utils/userTokens");
 const user_model_1 = require("../user/user.model");
 const wallet_model_1 = require("../wallet/wallet.model");
 const wallet_service_1 = require("../wallet/wallet.service");
+const getNewAccessToken = async (refreshToken) => {
+    const newAccessToken = await (0, userTokens_1.createNewAccessTokenWithRefreshToken)(refreshToken);
+    return {
+        accessToken: newAccessToken,
+    };
+};
+// REGISTER USER
 const register = async (payload) => {
-    console.log("Incoming role:", payload.role);
     const isUserExist = await user_model_1.UserModel.findOne({ email: payload.email });
     if (isUserExist) {
         throw new appError_1.default(http_status_codes_1.default.CONFLICT, "Email already registered");
@@ -29,6 +36,7 @@ const register = async (payload) => {
     }
     return user;
 };
+//LOGIN USER (Email + Password)
 const login = async (email, password) => {
     const user = await user_model_1.UserModel.findOne({ email });
     if (!user)
@@ -44,6 +52,7 @@ const login = async (email, password) => {
     const refreshToken = (0, jwt_1.generateToken)(payload, env_1.envVars.JWT_REFRESH_SECRET, env_1.envVars.JWT_REFRESH_EXPIRES);
     return { accessToken, refreshToken, user };
 };
+// ADMIN — APPROVE AGENT
 const approveAgent = async (agentId) => {
     const agent = await user_model_1.UserModel.findByIdAndUpdate(agentId, { isApproved: true, isSuspended: false }, { new: true });
     if (agent) {
@@ -70,5 +79,6 @@ exports.AuthService = {
     login,
     approveAgent,
     suspendAgent,
+    getNewAccessToken,
 };
 //# sourceMappingURL=auth.service.js.map

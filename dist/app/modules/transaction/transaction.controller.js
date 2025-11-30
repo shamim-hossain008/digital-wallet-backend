@@ -11,7 +11,7 @@ const transaction_service_1 = require("./transaction.service");
 const transaction_validation_1 = require("./transaction.validation");
 const deposit = (0, catchAsync_1.catchAsync)(async (req, res) => {
     const { amount } = transaction_validation_1.depositSchema.parse(req.body);
-    const wallet = await transaction_service_1.TransactionService.deposit(req.user.id, amount);
+    const wallet = await transaction_service_1.TransactionService.deposit(req.user._id.toString(), amount);
     (0, sendResponse_1.sendResponse)(res, {
         statusCode: http_status_codes_1.default.OK,
         success: true,

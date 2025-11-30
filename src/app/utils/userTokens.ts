@@ -7,20 +7,24 @@ import { UserModel } from "../modules/user/user.model";
 import { generateToken, verifyToken } from "./jwt";
 
 export const createUserTokens = (user: Partial<IUser>) => {
-  const JwtPayload = {
-    uerId: user._id,
+  const payload = {
+    userId: String(user._id),
     email: user.email,
     role: user.role,
   };
+
+  // Access Token
   const accessToken = generateToken(
-    JwtPayload,
+    payload,
     envVars.JWT_ACCESS_SECRET,
     envVars.JWT_ACCESS_EXPIRES
   );
+
+  // Refresh Token (⚠ uses REFRESH secret)
   const refreshToken = generateToken(
-    JwtPayload,
-    envVars.JWT_ACCESS_SECRET,
-    envVars.JWT_ACCESS_EXPIRES
+    payload,
+    envVars.JWT_REFRESH_SECRET,
+    envVars.JWT_REFRESH_EXPIRES
   );
 
   return {
@@ -29,47 +33,51 @@ export const createUserTokens = (user: Partial<IUser>) => {
   };
 };
 
+/**
+ * Verify refresh token and generate a NEW access token
+ */
 export const createNewAccessTokenWithRefreshToken = async (
   refreshToken: string
 ) => {
-  const verifiedRefreshToken = verifyToken(
+  const decoded = verifyToken(
     refreshToken,
-    envVars.JWT_ACCESS_SECRET
+    envVars.JWT_REFRESH_SECRET
   ) as JwtPayload;
 
-  const isUserExist = await UserModel.findOne({
-    email: verifiedRefreshToken.email,
+  const existingUser = await UserModel.findOne({
+    email: decoded.email,
   });
 
-  if (!isUserExist) {
-    throw new AppError(httpStatus.BAD_REQUEST, "User dose not exist");
+  if (!existingUser) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User does not exist");
   }
 
   if (
-    isUserExist.isActive === IsActive.BLOCKED ||
-    isUserExist.isActive === IsActive.INACTIVE
+    existingUser.isActive === IsActive.BLOCKED ||
+    existingUser.isActive === IsActive.INACTIVE
   ) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      `User is ${isUserExist.isActive}`
+      `User is ${existingUser.isActive}`
     );
   }
 
-  if (isUserExist.isDeleted) {
+  if (existingUser.isDeleted) {
     throw new AppError(httpStatus.BAD_REQUEST, "User is deleted");
   }
 
-  const JwtPayload = {
-    userId: isUserExist._id,
-    email: isUserExist.email,
-    role: isUserExist.role,
+  const payload = {
+    userId: existingUser._id,
+    email: existingUser.email,
+    role: existingUser.role,
   };
 
-  const accessToken = generateToken(
-    JwtPayload,
+  // New Access Token (⚠ correct expiry)
+  const newAccessToken = generateToken(
+    payload,
     envVars.JWT_ACCESS_SECRET,
-    envVars.JWT_ACCESS_SECRET
+    envVars.JWT_ACCESS_EXPIRES
   );
 
-  return accessToken;
+  return newAccessToken;
 };

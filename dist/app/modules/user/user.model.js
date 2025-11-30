@@ -12,7 +12,13 @@ const userSchema = new mongoose_1.Schema({
         unique: true,
         trim: true,
     },
-    password: { type: String, required: true },
+    password: {
+        type: String,
+        required: function () {
+            // Require password only if auths array is empty
+            return !this.auths || this.auths.length === 0;
+        },
+    },
     role: { type: String, enum: Object.values(auth_interface_1.Role), default: auth_interface_1.Role.USER },
     phone: { type: String },
     picture: { type: String },
@@ -26,6 +32,15 @@ const userSchema = new mongoose_1.Schema({
     isVerified: { type: Boolean, default: true },
     isSuspended: { type: Boolean, default: false },
     isApproved: { type: Boolean, default: false },
+    auths: {
+        type: [
+            {
+                provider: { type: String },
+                providerId: { type: String },
+            },
+        ],
+        default: [],
+    },
 }, {
     timestamps: true,
     versionKey: false,

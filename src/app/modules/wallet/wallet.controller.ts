@@ -3,10 +3,11 @@ import httpStatus from "http-status-codes";
 import AppError from "../../errorHelpers/appError";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
+import { IUser } from "../user/user.interface";
 import { WalletService } from "./wallet.service";
 
 const getMyWallet = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user?.id;
+  const userId = (req.user as IUser)._id?.toString();
   if (!userId) {
     throw new AppError(httpStatus.UNAUTHORIZED, "Invalid token payload");
   }
@@ -21,8 +22,8 @@ const getMyWallet = catchAsync(async (req: Request, res: Response) => {
 });
 
 const blockWallet = catchAsync(async (req: Request, res: Response) => {
-  const adminId = req.user?.id;
-  const userId = req.params.userId;
+  const adminId = (req.user as IUser)._id?.toString();
+  const userId = (req.user as IUser)._id?.toString();
 
   if (!adminId) {
     throw new AppError(httpStatus.UNAUTHORIZED, "Invalid token payload");
@@ -38,7 +39,7 @@ const blockWallet = catchAsync(async (req: Request, res: Response) => {
 });
 
 const unblockWallet = catchAsync(async (req: Request, res: Response) => {
-  const adminId = req.user?.id;
+  const adminId = (req.user as IUser)._id?.toString();
   const userId = req.params.userId;
 
   if (!adminId) {

@@ -27,7 +27,7 @@ export const checkAuth =
         throw new AppError(httpStatus.FORBIDDEN, "No token received");
       }
 
-      const accessToken = authHeader?.split(" ")[1]; // ✅ Extract token
+      const accessToken = authHeader?.split(" ")[1]; // Extract token
       console.log("Access Token:", accessToken);
 
       if (!accessToken) {
@@ -45,7 +45,7 @@ export const checkAuth =
       // const isUserExist = await UserModel.findOne({
       //   email: verifiedToken.email,
       // });
-      const isUserExist = await UserModel.findById(verifiedToken.id);
+      const isUserExist = await UserModel.findById(verifiedToken.UserId);
       // console.log("user found", isUserExist);
       // const isUserExist = await UserModel.findById(verifiedToken.id);
 
