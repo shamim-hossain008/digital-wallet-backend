@@ -1,17 +1,17 @@
 import { Request, Response } from "express";
 import httpStatus from "http-status-codes";
 import AppError from "../../errorHelpers/appError";
+import { IAuthJwtPayload } from "../../types/auth";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
-import { IUser } from "../user/user.interface";
 import { WalletService } from "./wallet.service";
 
 const getMyWallet = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req.user as IUser)._id?.toString();
-  if (!userId) {
+  const userId = req.user as IAuthJwtPayload;
+  if (!userId?.sub) {
     throw new AppError(httpStatus.UNAUTHORIZED, "Invalid token payload");
   }
-  const wallet = await WalletService.getWalletByUser(userId);
+  const wallet = await WalletService.getWalletByUser(userId.sub);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -21,9 +21,10 @@ const getMyWallet = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Admin: Block user's wallet
 const blockWallet = catchAsync(async (req: Request, res: Response) => {
-  const adminId = (req.user as IUser)._id?.toString();
-  const userId = (req.user as IUser)._id?.toString();
+  const adminId = (req.user as IAuthJwtPayload)?.sub;
+  const userId = req.params.userId;
 
   if (!adminId) {
     throw new AppError(httpStatus.UNAUTHORIZED, "Invalid token payload");
@@ -39,7 +40,7 @@ const blockWallet = catchAsync(async (req: Request, res: Response) => {
 });
 
 const unblockWallet = catchAsync(async (req: Request, res: Response) => {
-  const adminId = (req.user as IUser)._id?.toString();
+  const adminId = (req.user as IAuthJwtPayload)?.sub;
   const userId = req.params.userId;
 
   if (!adminId) {
@@ -55,9 +56,10 @@ const unblockWallet = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Admin get all wallets (paginated)
 const getAllWallets = catchAsync(async (req: Request, res: Response) => {
-  const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 10;
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
 
   const result = await WalletService.getAllWallets(page, limit);
 

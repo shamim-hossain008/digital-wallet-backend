@@ -58,7 +58,10 @@ const login = async (email: string, password: string) => {
 
   if (!isMatch) throw new Error("Invalid credentials");
 
-  const payload = { id: user._id.toString(), role: user.role };
+  const payload = {
+    sub: user._id.toString(),
+    role: user.role,
+  };
 
   const accessToken = generateToken(
     payload,

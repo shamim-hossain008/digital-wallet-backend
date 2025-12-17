@@ -1,5 +1,6 @@
 export interface IAuthJwtPayload {
-  id: string;
-  email: string;
+  sub: string;
   role: string;
+  iat?: number;
+  exp?: number;
 }

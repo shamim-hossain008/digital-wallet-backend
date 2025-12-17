@@ -13,26 +13,7 @@ const user_validation_1 = require("../user/user.validation");
 const auth_controller_1 = require("./auth.controller");
 const auth_interface_1 = require("./auth.interface");
 const router = (0, express_1.Router)();
-// router.post("/logout", AuthController.logout);
-// Minimal logout route
-router.post("/logout", (req, res) => {
-    res.clearCookie("accessToken", {
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-    });
-    res.clearCookie("refreshToken", {
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-    });
-    console.log("Logout route executed");
-    res.status(200).json({
-        success: true,
-        message: "User Logged Out Successfully",
-        data: null,
-    });
-});
+router.post("/logout", auth_controller_1.AuthController.logout);
 router.post("/login", auth_controller_1.AuthController.credentialsLogin);
 // router.post("/credentials-login", AuthController.credentialsLogin),
 router.post("/refresh-token", auth_controller_1.AuthController.getNewAccessToken);

@@ -35,7 +35,7 @@ const checkAuth = (...authRoles) => async (req, res, next) => {
         // const isUserExist = await UserModel.findOne({
         //   email: verifiedToken.email,
         // });
-        const isUserExist = await user_model_1.UserModel.findById(verifiedToken.id);
+        const isUserExist = await user_model_1.UserModel.findById(verifiedToken.userId);
         // console.log("user found", isUserExist);
         // const isUserExist = await UserModel.findById(verifiedToken.id);
         if (!isUserExist) {
@@ -56,7 +56,7 @@ const checkAuth = (...authRoles) => async (req, res, next) => {
                 throw new appError_1.default(http_status_codes_1.default.FORBIDDEN, "Agent is suspended");
             }
         }
-        if (!authRoles.includes(verifiedToken.role)) {
+        if (authRoles.length > 0 && !authRoles.includes(verifiedToken.role)) {
             throw new appError_1.default(403, "You are not permitted to view this route!!!!!!!");
         }
         req.user = verifiedToken;

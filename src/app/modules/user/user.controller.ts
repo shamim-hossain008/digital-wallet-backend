@@ -5,6 +5,7 @@ import AppError from "../../errorHelpers/appError";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { UserService } from "./user.service";
+import { IAuthJwtPayload } from "../../types/auth";
 
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
   const users = await UserService.getAllUsers();
@@ -55,14 +56,18 @@ const updatedUser = catchAsync(async (req: Request, res: Response) => {
 
 const getMe = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const decodedToken = req.user as JwtPayload;
-    const result = await UserService.getMe(decodedToken.id);
+    const authUser = req.user as IAuthJwtPayload; 
+
+    if(!authUser?.sub){
+      throw new AppError(httpStatus.UNAUTHORIZED, "Invalid token payload")
+    }
+    const result = await UserService.getMe(authUser.sub);
 
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
       message: "Your profile retrieved successfully",
-      data: result.data,
+      data: result,
     });
   }
 );

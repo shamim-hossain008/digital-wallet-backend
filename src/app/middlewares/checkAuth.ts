@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status-codes";
-import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../config/env";
 import AppError from "../errorHelpers/appError";
 import { IsActive } from "../modules/user/user.interface";
 import { UserModel } from "../modules/user/user.model";
+import { IAuthJwtPayload } from "../types/auth";
 import { verifyToken } from "../utils/jwt";
 
 export const checkAuth =
@@ -33,21 +33,25 @@ export const checkAuth =
       if (!accessToken) {
         console.log("❌ Authorization header exists but token missing");
 
-        throw new AppError(httpStatus.FORBIDDEN, "No token received");
+        throw new AppError(
+          httpStatus.FORBIDDEN,
+          "Invalid authorization format"
+        );
       }
-      const verifiedToken = verifyToken(
+
+      const decoded = verifyToken(
         accessToken,
         envVars.JWT_ACCESS_SECRET
-      ) as JwtPayload;
+      ) as IAuthJwtPayload;
 
-      console.log("✅ Token Decoded:", verifiedToken);
+      console.log("✅ Token Decoded:", decoded);
 
-      // const isUserExist = await UserModel.findOne({
-      //   email: verifiedToken.email,
-      // });
-      const isUserExist = await UserModel.findById(verifiedToken.UserId);
-      // console.log("user found", isUserExist);
-      // const isUserExist = await UserModel.findById(verifiedToken.id);
+      // Check Required
+      if (!decoded.sub || !decoded.role) {
+        throw new AppError(httpStatus.UNAUTHORIZED, "Invalid token payload");
+      }
+
+      const isUserExist = await UserModel.findById(decoded.sub);
 
       if (!isUserExist) {
         throw new AppError(httpStatus.BAD_REQUEST, "User dose not exist");
@@ -76,14 +80,14 @@ export const checkAuth =
         }
       }
 
-      if (!authRoles.includes(verifiedToken.role)) {
+      if (authRoles.length > 0 && !authRoles.includes(decoded.role)) {
         throw new AppError(
-          403,
+          httpStatus.FORBIDDEN,
           "You are not permitted to view this route!!!!!!!"
         );
       }
 
-      req.user = verifiedToken;
+      req.user = decoded as any;
       next();
     } catch (error) {
       next(error);

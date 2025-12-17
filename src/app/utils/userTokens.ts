@@ -1,15 +1,14 @@
 import httpStatus from "http-status-codes";
-import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../config/env";
 import AppError from "../errorHelpers/appError";
 import { IsActive, IUser } from "../modules/user/user.interface";
 import { UserModel } from "../modules/user/user.model";
+import { IAuthJwtPayload } from "../types/auth";
 import { generateToken, verifyToken } from "./jwt";
 
-export const createUserTokens = (user: Partial<IUser>) => {
-  const payload = {
-    userId: String(user._id),
-    email: user.email,
+export const createUserTokens = (user: IUser) => {
+  const payload: IAuthJwtPayload = {
+    sub: user._id.toString(),
     role: user.role,
   };
 
@@ -42,11 +41,13 @@ export const createNewAccessTokenWithRefreshToken = async (
   const decoded = verifyToken(
     refreshToken,
     envVars.JWT_REFRESH_SECRET
-  ) as JwtPayload;
+  ) as IAuthJwtPayload;
 
-  const existingUser = await UserModel.findOne({
-    email: decoded.email,
-  });
+  if (!decoded.sub) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid refresh token");
+  }
+
+  const existingUser = await UserModel.findById(decoded.sub);
 
   if (!existingUser) {
     throw new AppError(httpStatus.BAD_REQUEST, "User does not exist");
@@ -66,9 +67,9 @@ export const createNewAccessTokenWithRefreshToken = async (
     throw new AppError(httpStatus.BAD_REQUEST, "User is deleted");
   }
 
-  const payload = {
-    userId: existingUser._id,
-    email: existingUser.email,
+  const payload: IAuthJwtPayload = {
+    sub: existingUser._id.toString(),
+
     role: existingUser.role,
   };
 

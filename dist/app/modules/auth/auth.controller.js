@@ -103,8 +103,18 @@ const googleCallbackController = (0, catchAsync_1.catchAsync)(async (req, res, n
 });
 // user logout
 const logout = (0, catchAsync_1.catchAsync)(async (req, res) => {
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
+    // Clear access token cookie
+    res.clearCookie("accessToken", {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+    });
+    // Clear refresh token cooke
+    res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+    });
     (0, sendResponse_1.sendResponse)(res, {
         success: true,
         statusCode: http_status_codes_1.default.OK,

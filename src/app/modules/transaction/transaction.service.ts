@@ -97,19 +97,76 @@ const transfer = async (
   return { senderWallet, receiverWallet };
 };
 
-const getMyTransactions = async (userId: string) => {
+const getMyTransactions = async (
+  userId: string,
+  page = 1,
+  limit = 10,
+  type?: string,
+  dateRange?: number,
+  search?: string,
+  sort?: string
+) => {
   if (!userId) {
     throw new AppError(httpStatus.BAD_REQUEST, "User ID is required");
   }
 
-  const transactions = await TransactionModel.find({
+  // Base Filter
+  const filter: any = {
     $or: [{ sender: userId }, { receiver: userId }],
-  })
+  };
+
+  // Type Filter (deposit/withdraw/transfer)
+  if (type) filter.type = type;
+
+  // Date Range (last 7/30days)
+  if (dateRange) {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - dateRange);
+    filter.timestamp = { $gte: startDate };
+  }
+
+  // Search by email or amount
+  if (search) {
+    const searchRegex = new RegExp(search, "i");
+
+    filter.$or = [
+      { sender: userId },
+      { receiver: userId },
+      { amount: Number(search) || undefined },
+      { "sender.email": searchRegex },
+      { "receiver.email": searchRegex },
+    ];
+  }
+
+  // sorting
+  let sortQuery: any = { timestamp: -1 }; //default
+
+  if (sort === "amount-asc") sortQuery = { amount: 1 };
+  if (sort === "amount-desc") sortQuery = { amount: -1 };
+  if (sort === "date-asc") sortQuery = { Timestamp: 1 };
+  if (sort === "date-desc") sortQuery = { Timestamp: -1 };
+
+  // Pagination
+  const skip = (page - 1) * limit;
+
+  // Query
+  const transactions = await TransactionModel.find(filter)
     .sort({ Timestamp: -1 })
+    .skip(skip)
+    .limit(limit)
     .populate("sender", "email role")
     .populate("receiver", "email role");
 
-  return transactions;
+  const total = await TransactionModel.countDocuments(filter);
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    transactions,
+    total,
+    totalPages,
+    page,
+    limit,
+  };
 };
 
 const cashIn = async (agentId: string, userId: string, amount: number) => {

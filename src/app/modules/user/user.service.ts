@@ -4,6 +4,7 @@ import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/env";
 import AppError from "../../errorHelpers/appError";
 import { Role } from "../auth/auth.interface";
+import { WalletModel } from "../wallet/wallet.model";
 import { IUser } from "./user.interface";
 import { UserModel } from "./user.model";
 
@@ -60,17 +61,24 @@ const updatedUser = async (
 };
 
 const getMe = async (userId: string) => {
-  const user = await UserModel.findById(userId).select("-password");
+  const user = await UserModel.findById(userId).select("-password").lean();
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  const wallet = await WalletModel.findOne({ user: userId }).lean();
 
   return {
-    data: user,
+    ...user,
+    walletBalance: wallet?.balance ?? 0,
+    recentTransactions: [],
   };
 };
 // Delete user
 const deleteUser = async (id: string): Promise<IUser | null> => {
   return UserModel.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
 };
-
 
 export const UserService = {
   getAllUsers,
