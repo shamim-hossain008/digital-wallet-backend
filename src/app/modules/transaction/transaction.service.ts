@@ -129,17 +129,22 @@ const getMyTransactions = async (
   if (search) {
     const searchRegex = new RegExp(search, "i");
 
-    filter.$or = [
-      { sender: userId },
-      { receiver: userId },
-      { amount: Number(search) || undefined },
-      { "sender.email": searchRegex },
-      { "receiver.email": searchRegex },
+    filter.$and = [
+      {
+        $or: [{ sender: userId }, { receiver: userId }],
+      },
+      {
+        $or: [
+          { amount: Number(search) || -1 },
+          { "sender.email": searchRegex },
+          { "receiver.email": searchRegex },
+        ],
+      },
     ];
   }
 
   // sorting
-  let sortQuery: any = { timestamp: -1 }; //default
+  let sortQuery: Record<string, 1 | -1> = { timestamp: -1 }; //default
 
   if (sort === "amount-asc") sortQuery = { amount: 1 };
   if (sort === "amount-desc") sortQuery = { amount: -1 };
@@ -151,7 +156,7 @@ const getMyTransactions = async (
 
   // Query
   const transactions = await TransactionModel.find(filter)
-    .sort({ Timestamp: -1 })
+    .sort(sortQuery)
     .skip(skip)
     .limit(limit)
     .populate("sender", "email role")

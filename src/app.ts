@@ -13,8 +13,6 @@ import { router } from "./app/routes";
 
 const app: Application = express();
 
-
-
 // 2️⃣ Express session
 app.use(
   expressSession({
@@ -23,7 +21,6 @@ app.use(
     saveUninitialized: false,
   })
 );
-
 
 // 3️⃣ Initialize Passport
 app.use(passport.initialize());

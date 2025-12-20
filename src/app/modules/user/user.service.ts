@@ -1,8 +1,8 @@
 import bcryptjs from "bcryptjs";
 import httpStatus from "http-status-codes";
-import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/env";
 import AppError from "../../errorHelpers/appError";
+import { IAuthJwtPayload } from "../../types/auth";
 import { Role } from "../auth/auth.interface";
 import { WalletModel } from "../wallet/wallet.model";
 import { IUser } from "./user.interface";
@@ -23,7 +23,7 @@ const getSingleUser = async (id: string) => {
 const updatedUser = async (
   userId: string,
   payload: Partial<IUser>,
-  decodedToken: JwtPayload
+  decodedToken: IAuthJwtPayload
 ) => {
   const ifUserExist = await UserModel.findById(userId);
 
@@ -75,6 +75,27 @@ const getMe = async (userId: string) => {
     recentTransactions: [],
   };
 };
+
+// update my profile
+const updatedMyProfile = async (
+  userId: string,
+  payload: Pick<IUser, "name" | "phone">
+) => {
+  const user = await UserModel.findByIdAndUpdate(
+    userId,
+    {
+      ...(payload.name && { name: payload.name }),
+      ...(payload.phone && { phone: payload.phone }),
+    },
+    { new: true, runValidators: true }
+  ).select("-password");
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  return user;
+};
 // Delete user
 const deleteUser = async (id: string): Promise<IUser | null> => {
   return UserModel.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
@@ -86,4 +107,5 @@ export const UserService = {
   updatedUser,
   deleteUser,
   getMe,
+  updatedMyProfile,
 };

@@ -43,7 +43,7 @@ const updatedUser = catchAsync(async (req: Request, res: Response) => {
   const user = await UserService.updatedUser(
     userId,
     payload,
-    verifiedToken as JwtPayload
+    verifiedToken as IAuthJwtPayload
   );
 
   sendResponse(res, {
@@ -70,7 +70,29 @@ const getMe = catchAsync(
       data: result,
     });
   }
-);
+); 
+// update My Profile
+const updatedMyProfile = catchAsync(async(req:Request, res:Response)=>{
+  const authUser = req.user as IAuthJwtPayload 
+
+  if(!authUser?.sub) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid token")
+  } 
+
+  const payload = req.body
+
+  const updatedUser= await UserService.updatedMyProfile(
+    authUser.sub,
+    payload
+  ) 
+
+  sendResponse(res, {
+    success:true,
+    statusCode:httpStatus.OK,
+    message:"Profile updated successfully",
+    data:updatedUser
+  })
+})
 // delete user
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id;
@@ -91,6 +113,7 @@ export const UserController = {
   getAllUsers,
   getSingleUser,
   updatedUser,
+  updatedMyProfile,
   deleteUser,
   getMe,
 };

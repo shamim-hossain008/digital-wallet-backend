@@ -10,6 +10,9 @@ const router = Router();
 router.get("/all-users", checkAuth(Role.ADMIN), UserController.getAllUsers);
 // user profile
 router.get("/me", checkAuth(...Object.values(Role)), UserController.getMe);
+
+// updated my profile
+router.patch("/update-profile",checkAuth(),UserController.updatedMyProfile)
 // single user route
 router.get(
   "/:id",
