@@ -14,6 +14,7 @@ const WalletSchema = new Schema<IWallet>(
     //Initial bonus
     balance: {
       type: Number,
+      required: true,
       default: 50,
       min: [0, "Wallet balance cannot be negative"],
     },

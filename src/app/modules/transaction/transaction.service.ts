@@ -104,7 +104,8 @@ const getMyTransactions = async (
   type?: string,
   dateRange?: number,
   search?: string,
-  sort?: string
+  sortBy?: string,
+  sortOrder?: "asc" | "desc"
 ) => {
   if (!userId) {
     throw new AppError(httpStatus.BAD_REQUEST, "User ID is required");
@@ -144,12 +145,13 @@ const getMyTransactions = async (
   }
 
   // sorting
-  let sortQuery: Record<string, 1 | -1> = { timestamp: -1 }; //default
+  let sortQuery: any = { timestamp: -1 }; //Default
 
-  if (sort === "amount-asc") sortQuery = { amount: 1 };
-  if (sort === "amount-desc") sortQuery = { amount: -1 };
-  if (sort === "date-asc") sortQuery = { Timestamp: 1 };
-  if (sort === "date-desc") sortQuery = { Timestamp: -1 };
+  if (sortBy && sortOrder) {
+    sortQuery = {
+      [sortBy]: sortOrder === "asc" ? 1 : -1,
+    };
+  }
 
   // Pagination
   const skip = (page - 1) * limit;

@@ -4,6 +4,7 @@ import { envVars } from "../../config/env";
 import AppError from "../../errorHelpers/appError";
 import { IAuthJwtPayload } from "../../types/auth";
 import { Role } from "../auth/auth.interface";
+import { TransactionModel } from "../transaction/transaction.model";
 import { WalletModel } from "../wallet/wallet.model";
 import { IUser } from "./user.interface";
 import { UserModel } from "./user.model";
@@ -19,7 +20,7 @@ const getSingleUser = async (id: string) => {
     data: user,
   };
 };
-//  update user
+//  update user(admin/agent)
 const updatedUser = async (
   userId: string,
   payload: Partial<IUser>,
@@ -69,10 +70,17 @@ const getMe = async (userId: string) => {
 
   const wallet = await WalletModel.findOne({ user: userId }).lean();
 
+  // Fetch recentTransactions
+  const recentTransactions = await TransactionModel.find({
+    $or: [{ sender: userId }, { receiver: userId }],
+  })
+    .sort({ Timestamp: -1 })
+    .limit(5)
+    .select("type amount status timestamp");
   return {
     ...user,
     walletBalance: wallet?.balance ?? 0,
-    recentTransactions: [],
+    recentTransactions,
   };
 };
 

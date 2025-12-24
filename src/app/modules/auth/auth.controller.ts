@@ -168,7 +168,7 @@ const approveAgent = catchAsync(async (req: Request, res: Response) => {
 
   // Safe user id extraction
   const userId =
-    (req.user as IAuthJwtPayload)?.id || (req.user as IUser)?._id?.toString();
+    (req.user as IAuthJwtPayload)?.sub || (req.user as IUser)?._id?.toString();
 
   if (!userId) {
     throw new AppError(httpStatus.UNAUTHORIZED, "Invalid user");
@@ -194,7 +194,7 @@ const suspendAgent = catchAsync(async (req: Request, res: Response) => {
     throw new AppError(httpStatus.BAD_REQUEST, "Agent ID is required");
 
   const userId =
-    (req.user as IAuthJwtPayload)?.id || (req.user as IUser)?._id?.toString();
+    (req.user as IAuthJwtPayload)?.sub || (req.user as IUser)?._id?.toString();
 
   if (!userId) {
     throw new AppError(httpStatus.UNAUTHORIZED, "Invalid user");

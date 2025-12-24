@@ -73,9 +73,10 @@ const getMyTransactions = catchAsync(async (req: Request, res: Response) => {
   const limit = Number(req.query.limit) || 10;
   const type = req.query.type as string | undefined;
   const range = req.query.range ? Number(req.query.range) : undefined;
-
   const search = req.query.search as string | undefined;
-  const sort = req.query.sort as string | undefined;
+
+  const sortBy = req.query.sortBy as string | undefined;
+  const sortOrder = req.query.sortOrder as "asc" | "desc" | undefined;
 
   const result = await TransactionService.getMyTransactions(
     userId,
@@ -84,7 +85,8 @@ const getMyTransactions = catchAsync(async (req: Request, res: Response) => {
     type,
     range,
     search,
-    sort
+    sortBy,
+    sortOrder
   );
 
   sendResponse(res, {

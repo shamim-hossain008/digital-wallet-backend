@@ -81,18 +81,37 @@ const login = async (email: string, password: string) => {
 // ADMIN — APPROVE AGENT
 
 const approveAgent = async (agentId: string) => {
-  const agent = await UserModel.findByIdAndUpdate(
-    agentId,
-    { isApproved: true, isSuspended: false },
-    { new: true }
-  );
-  if (agent) {
-    await WalletModel.findOneAndUpdate(
-      { user: new Types.ObjectId(agentId) },
-      { isBlocked: false },
-      { new: true }
-    );
+  const agentObjectId = new Types.ObjectId(agentId);
+
+  const agent = await UserModel.findByIdAndUpdate(agentObjectId);
+
+  if (!agent) {
+    throw new AppError(httpStatus.NOT_FOUND, "Agent not found");
   }
+  // approve agent and ensure correct role
+  agent.role = "AGENT";
+  agent.isApproved = true;
+  agent.isSuspended = false;
+  await agent.save();
+
+  await WalletModel.findOneAndUpdate(
+    { user: agentObjectId }, // wallet must belong to same user
+    {
+      $setOnInsert: {
+        user: agentObjectId,
+        balance: 50, // initial bonus
+        isBlocked: false,
+      },
+      $set: {
+        isBlocked: false, // unblock if existed
+      },
+    },
+    {
+      upsert: true,
+      new: true,
+    }
+  );
+
   return agent;
 };
 
