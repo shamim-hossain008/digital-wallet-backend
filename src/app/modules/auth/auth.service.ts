@@ -8,7 +8,7 @@ import { createNewAccessTokenWithRefreshToken } from "../../utils/userTokens";
 import { UserModel } from "../user/user.model";
 import { WalletModel } from "../wallet/wallet.model";
 import { WalletService } from "../wallet/wallet.service";
-import { IAuthUser } from "./auth.interface";
+import { IAuthUser, Role } from "./auth.interface";
 
 const getNewAccessToken = async (refreshToken: string) => {
   const newAccessToken = await createNewAccessTokenWithRefreshToken(
@@ -89,7 +89,7 @@ const approveAgent = async (agentId: string) => {
     throw new AppError(httpStatus.NOT_FOUND, "Agent not found");
   }
   // approve agent and ensure correct role
-  agent.role = "AGENT";
+  agent.role = Role.AGENT;
   agent.isApproved = true;
   agent.isSuspended = false;
   await agent.save();
