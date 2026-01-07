@@ -10,9 +10,59 @@ import { IUser } from "./user.interface";
 import { UserModel } from "./user.model";
 
 // get All users
-const getAllUsers = async (): Promise<IUser[]> => {
-  return UserModel.find({ isDeleted: false });
+const getAllUsers = async (query: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+}) => {
+  const page = Number(query.page) || 1;
+  const limit = Number(query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const filters: any = { isDeleted: false };
+
+  // search by name or email
+  if (query.search) {
+    filters.$0r = [
+      { name: { $regex: query.search, $options: "i" } },
+      { email: { $regex: query.search, $options: "i" } },
+    ];
+  }
+
+  // Status filter
+  if (query.status === "blocked") {
+    filters.isActive = "BLOCKED";
+  }
+
+  if (query.status === "active") {
+    filters.isActive = "ACTIVE";
+  }
+
+  const [users, total] = await Promise.all([
+    UserModel.find(filters)
+      .select("-password")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+
+    UserModel.countDocuments(filters),
+    
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    data: users,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages,
+    },
+  };
 };
+
 // get single user
 const getSingleUser = async (id: string) => {
   const user = await UserModel.findById(id).select("-password");

@@ -128,7 +128,27 @@ const cashOut = catchAsync(async (req: Request, res: Response) => {
 const getAllTransactions = catchAsync(async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
-  const result = await TransactionService.getAllTransactions(page, limit);
+
+  const search = req.query.search as string | undefined;
+  const type = req.query.type as string | undefined;
+  const status = req.query.status as string | undefined;
+
+  const minAmount = req.query.minAmount
+    ? Number(req.query.minAmount)
+    : undefined;
+  const maxAmount = req.query.maxAmount
+    ? Number(req.query.maxAmount)
+    : undefined;
+
+  const result = await TransactionService.getAllTransactions(
+    page,
+    limit,
+    search,
+    type,
+    status,
+    minAmount,
+    maxAmount
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

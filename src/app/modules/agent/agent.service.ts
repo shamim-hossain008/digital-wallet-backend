@@ -80,7 +80,7 @@ const getAgentDashboard = async (
     totalCashOuts: cashOutAgg[0]?.total || 0,
     commissionEarned: commissionEarned[0]?.total || 0,
 
-    transactions: {
+    recentTransactions: {
       meta: {
         page,
         limit,

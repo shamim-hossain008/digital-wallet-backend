@@ -223,18 +223,44 @@ const cashOut = async (agentId: string, userId: string, amount: number) => {
   return userWallet;
 };
 
-const getAllTransactions = async (page = 1, limit = 10) => {
+const getAllTransactions = async (
+  page = 1,
+  limit = 10,
+  search?: string,
+  type?: string,
+  status?: string,
+  minAmount?: number,
+  maxAmount?: number
+) => {
   const skip = (page - 1) * limit;
-  const transactions = await TransactionModel.find()
+
+  const filter: any = {};
+  if (type) filter.type = type;
+  if (status) filter.status = status;
+
+  if (minAmount !== undefined || maxAmount !== undefined) {
+    filter.amount = {};
+    if (minAmount !== undefined) filter.amount.$gte = minAmount;
+    if (maxAmount !== undefined) filter.amount.$lte = maxAmount;
+  }
+
+  if (search) {
+    filter.$or = [
+      { "sender.email": { $regex: search, $options: "i" } },
+      { "receiver.email": { $regex: search, $options: "i" } },
+    ];
+  }
+  const transactions = await TransactionModel.find(filter)
     .sort("-timestamp")
     .skip(skip)
     .limit(limit)
     .populate("sender", "email role")
     .populate("receiver", "email role");
 
-  const total = await TransactionModel.countDocuments();
+  const total = await TransactionModel.countDocuments(filter);
+  const totalPages = Math.ceil(total / limit);
 
-  return { total, page, limit, transactions };
+  return { total, page, limit, transactions, totalPages };
 };
 
 export const TransactionService = {

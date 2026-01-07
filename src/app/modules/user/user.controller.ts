@@ -1,21 +1,22 @@
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status-codes";
-import { JwtPayload } from "jsonwebtoken";
 import AppError from "../../errorHelpers/appError";
+import { IAuthJwtPayload } from "../../types/auth";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { UserService } from "./user.service";
-import { IAuthJwtPayload } from "../../types/auth";
 
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
-  const users = await UserService.getAllUsers();
+  const result = await UserService.getAllUsers(req.query);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Users retrieved successfully",
-    data: users,
+    data: result.data,
+    meta:result.meta
   });
+  
 });
 
 // single user
@@ -56,10 +57,10 @@ const updatedUser = catchAsync(async (req: Request, res: Response) => {
 
 const getMe = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const authUser = req.user as IAuthJwtPayload; 
+    const authUser = req.user as IAuthJwtPayload;
 
-    if(!authUser?.sub){
-      throw new AppError(httpStatus.UNAUTHORIZED, "Invalid token payload")
+    if (!authUser?.sub) {
+      throw new AppError(httpStatus.UNAUTHORIZED, "Invalid token payload");
     }
     const result = await UserService.getMe(authUser.sub);
 
@@ -70,29 +71,26 @@ const getMe = catchAsync(
       data: result,
     });
   }
-); 
+);
 // update My Profile
-const updatedMyProfile = catchAsync(async(req:Request, res:Response)=>{
-  const authUser = req.user as IAuthJwtPayload 
+const updatedMyProfile = catchAsync(async (req: Request, res: Response) => {
+  const authUser = req.user as IAuthJwtPayload;
 
-  if(!authUser?.sub) {
-    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid token")
-  } 
+  if (!authUser?.sub) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid token");
+  }
 
-  const payload = req.body
+  const payload = req.body;
 
-  const updatedUser= await UserService.updatedMyProfile(
-    authUser.sub,
-    payload
-  ) 
+  const updatedUser = await UserService.updatedMyProfile(authUser.sub, payload);
 
   sendResponse(res, {
-    success:true,
-    statusCode:httpStatus.OK,
-    message:"Profile updated successfully",
-    data:updatedUser
-  })
-})
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Profile updated successfully",
+    data: updatedUser,
+  });
+});
 // delete user
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id;
