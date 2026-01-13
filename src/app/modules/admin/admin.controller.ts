@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import httpStatus from "http-status-codes";
 import { Parser } from "json2csv";
+import { IAuthJwtPayload } from "../../types/auth";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { AdminService } from "./admin.service";
@@ -18,26 +19,28 @@ const getTransactionSummary = catchAsync(
   }
 );
 
-const getCommissionPayouts = catchAsync(async (req: Request, res: Response) => {
-  const { fromDate, toDate, status } = req.query;
-  const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 10;
+// commission Summary
 
-  const payouts = await AdminService.getCommissionPayouts(
+const getCommissionSummary = catchAsync(async (req: Request, res: Response) => {
+  const { fromDate, toDate, status, page, limit } = req.query;
+
+  const payouts = await AdminService.getCommissionSummary(
     fromDate as string,
     toDate as string,
     status as string,
-    page,
-    limit
+    Number(page) || 1,
+    Number(limit) || 10
   );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Commission payout summary retrieved",
+    message: "Commission  summary retrieved",
     data: payouts,
   });
 });
+
+// CSV Export
 
 const exportCommissionCSV = catchAsync(async (req: Request, res: Response) => {
   const { fromDate, toDate, status } = req.query as {
@@ -46,7 +49,7 @@ const exportCommissionCSV = catchAsync(async (req: Request, res: Response) => {
     status?: string;
   };
 
-  const payouts = await AdminService.getCommissionPayouts(
+  const payouts = await AdminService.getCommissionSummary(
     fromDate,
     toDate,
     status,
@@ -62,8 +65,47 @@ const exportCommissionCSV = catchAsync(async (req: Request, res: Response) => {
   res.send(csv);
 });
 
+// Pay commission
+const payCommission = catchAsync(async (req: Request, res: Response) => {
+  const adminId = (req.user as IAuthJwtPayload).sub;
+  const { agentId, amount, fromDate, toDate } = req.body;
+
+  const payout = await AdminService.createCommissionPayout({
+    agentId,
+    amount,
+    fromDate,
+    toDate,
+    adminId,
+  });
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Commission payout created",
+    data: payout,
+  });
+});
+
+const getCommissionHistory = catchAsync(async (req: Request, res: Response) => {
+  const { page = 1, limit = 10 } = req.query;
+
+  const history = await AdminService.getCommissionHistory(
+    Number(page),
+    Number(limit)
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Commission history retrieved",
+    data: history,
+  });
+});
+
 export const AdminController = {
   getTransactionSummary,
-  getCommissionPayouts,
+  getCommissionSummary,
   exportCommissionCSV,
+  payCommission,
+  getCommissionHistory,
 };

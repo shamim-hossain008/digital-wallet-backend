@@ -86,7 +86,7 @@ export const checkAuth =
           "You are not permitted to view this route!!!!!!!"
         );
       }
-
+     
       req.user = decoded as any;
       next();
     } catch (error) {
