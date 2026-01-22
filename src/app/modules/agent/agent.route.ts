@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { upload } from "../../config/multer";
 import { checkAuth } from "../../middlewares/checkAuth";
+
+import { uploadAdminAvatar } from "../../middlewares/uploadAdminImage";
 import { Role } from "../auth/auth.interface";
 import { AgentController } from "./agent.controller";
 
@@ -10,7 +11,7 @@ const router = Router();
 router.get(
   "/dashboard",
   checkAuth(Role.AGENT),
-  AgentController.getAgentDashboard
+  AgentController.getAgentDashboard,
 );
 
 // agent profile
@@ -19,21 +20,26 @@ router.get("/profile", checkAuth(Role.AGENT), AgentController.getAgentProfile);
 router.patch(
   "/profile",
   checkAuth(Role.AGENT),
-  upload.single("photo"),
-  AgentController.updatedAgentProfile
+  uploadAdminAvatar.single("picture"),
+  AgentController.updatedAgentProfile,
 );
-
+// Delete Agent profile picture
+router.delete(
+  "/profile/picture",
+  checkAuth(Role.AGENT),
+  AgentController.removeAgentPicture,
+);
 // change password
 router.patch(
   "/change-password",
   checkAuth(Role.AGENT),
-  AgentController.changeAgentPassword
+  AgentController.changeAgentPassword,
 );
 // Transactions
 router.get(
   "/transactions",
   checkAuth(Role.AGENT),
-  AgentController.getAgentTransactions
+  AgentController.getAgentTransactions,
 );
 
 // Cash-in

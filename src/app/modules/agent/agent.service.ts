@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import httpStatus from "http-status-codes";
 import { Types } from "mongoose";
+import cloudinary from "../../config/cloudinary";
 import { envVars } from "../../config/env";
 import AppError from "../../errorHelpers/appError";
 import { FilterType } from "../../types/filterType";
@@ -13,7 +14,7 @@ const getAgentDashboard = async (
   agentId: string,
   filter: FilterType = "all",
   page = 1,
-  limit = 10
+  limit = 10,
 ) => {
   const agentObjectId = new Types.ObjectId(agentId);
 
@@ -220,7 +221,7 @@ const getAgentTransactions = async (
   filter: FilterType = "all",
   page: number,
   limit: number,
-  search: string
+  search: string,
 ) => {
   const agentObjectId = new Types.ObjectId(agentId);
 
@@ -285,24 +286,72 @@ const getAgentProfile = async (agentId: string) => {
 // Update agent profile
 const updateAgentProfile = async (
   agentId: string,
-  payload: { name?: string; phone?: string; picture?: string }
+  payload: {
+    name?: string;
+    phone?: string;
+    picture?: string;
+    picturePublicId: string;
+  },
 ) => {
-  const agent = await UserModel.findByIdAndUpdate(agentId, payload, {
-    new: true,
-  }).select("-password");
+  const agent = await UserModel.findById(agentId).select("-password");
+
+  if (!agent) {
+    throw new AppError(httpStatus.NOT_FOUND, "Agent not found");
+  }
+  // new picture provided, remove old
+  if (payload.picture && payload.picturePublicId && agent.picturePublicId) {
+    try {
+      await cloudinary.uploader.destroy(agent.picturePublicId);
+    } catch (error) {
+      console.error("Failed to remove old picture:", error);
+    }
+  }
+
+  if (payload.name !== undefined) {
+    agent.name = payload.name;
+  }
+
+  if (payload.phone !== undefined) {
+    agent.phone = payload.phone;
+  }
+
+  if (payload.picture && payload.picturePublicId) {
+    agent.picture = payload.picture;
+    agent.picturePublicId = payload.picturePublicId;
+  }
+
+  await agent.save();
+  return agent.toObject({ versionKey: false });
+};
+
+// Remove Agent picture
+const removeAgentPicture = async (agentId: string) => {
+  const agent = await UserModel.findById(agentId);
 
   if (!agent) {
     throw new AppError(httpStatus.NOT_FOUND, "Agent not found");
   }
 
-  return agent;
+  if (agent.picturePublicId) {
+    try {
+      await cloudinary.uploader.destroy(agent.picturePublicId);
+    } catch (error) {
+      console.error("Failed to remove picture:", error);
+    }
+  }
+
+  ((agent.picture = null), (agent.picturePublicId = null));
+
+  await agent.save();
+
+  return agent.toObject({ versionKey: false });
 };
 
 //change password
 const changeAgentPassword = async (
   agentId: string,
   oldPassword: string,
-  newPassword: string
+  newPassword: string,
 ) => {
   const agent = await UserModel.findById(agentId).select("+password");
 
@@ -313,7 +362,7 @@ const changeAgentPassword = async (
   if (!agent.password) {
     throw new AppError(
       httpStatus.INTERNAL_SERVER_ERROR,
-      "Agent has no password set"
+      "Agent has no password set",
     );
   }
 
@@ -338,4 +387,5 @@ export const AgentService = {
   cashOut,
   getAgentProfile,
   updateAgentProfile,
+  removeAgentPicture,
 };

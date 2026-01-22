@@ -5,6 +5,7 @@ import { envVars } from "../../config/env";
 import AppError from "../../errorHelpers/appError";
 import { generateToken } from "../../utils/jwt";
 import { createNewAccessTokenWithRefreshToken } from "../../utils/userTokens";
+import { IsActive } from "../user/user.interface";
 import { UserModel } from "../user/user.model";
 import { WalletModel } from "../wallet/wallet.model";
 import { WalletService } from "../wallet/wallet.service";
@@ -92,6 +93,8 @@ const approveAgent = async (agentId: string) => {
   agent.role = Role.AGENT;
   agent.isApproved = true;
   agent.isSuspended = false;
+  agent.isActive = IsActive.ACTIVE;
+
   await agent.save();
 
   await WalletModel.findOneAndUpdate(
@@ -127,21 +130,22 @@ const suspendAgent = async (agentId: string) => {
     );
   }
 
-  const updateAgent = await UserModel.findByIdAndUpdate(
-    agentId,
-    { isSuspended: true },
+  // Update all relevant flags
+  agent.isApproved = false;
+  agent.isSuspended = true;
+  agent.isActive = IsActive.INACTIVE;
+
+  await agent.save();
+
+  await WalletModel.findOneAndUpdate(
+    { user: new Types.ObjectId(agentId) },
+    { isBlocked: true },
     { new: true }
   );
-  if (updateAgent) {
-    await WalletModel.findOneAndUpdate(
-      { user: new Types.ObjectId(agentId) },
-      { isBlocked: true },
-      { new: true }
-    );
-  }
 
-  return updateAgent;
+  return agent;
 };
+
 export const AuthService = {
   register,
   login,

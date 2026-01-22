@@ -1,6 +1,6 @@
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
-import cloudinary from "./cloudinary";
+import cloudinary from "../config/cloudinary";
 
 const storage = new CloudinaryStorage({
   cloudinary,
@@ -13,7 +13,7 @@ const storage = new CloudinaryStorage({
   }),
 });
 
-export const upload = multer({
+export const uploadAgentAvatar = multer({
   storage,
   limits: {
     fileSize: 2 * 1024 * 1024,

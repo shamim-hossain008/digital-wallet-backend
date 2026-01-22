@@ -1,19 +1,24 @@
 import { Request, Response } from "express";
 import httpStatus from "http-status-codes";
 import { IAuthJwtPayload } from "../../types/auth";
+import { FilterType } from "../../types/filterType";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { AgentService } from "./agent.service";
-import { FilterType } from "../../types/filterType";
 
 const getAgentDashboard = catchAsync(async (req: Request, res: Response) => {
   const agentId = (req.user as IAuthJwtPayload).sub;
 
   const filter = (req.query.filter as FilterType) || "all";
-  const page = Number(req.query.page) || 1
-  const limit = Number(req.query.limit) || 10
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
 
-  const dashboard = await AgentService.getAgentDashboard(agentId, filter,page,limit);
+  const dashboard = await AgentService.getAgentDashboard(
+    agentId,
+    filter,
+    page,
+    limit,
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -27,7 +32,7 @@ const getAgentDashboard = catchAsync(async (req: Request, res: Response) => {
 const getAgentTransactions = catchAsync(async (req: Request, res: Response) => {
   const agentId = (req.user as IAuthJwtPayload).sub;
 
-  const filter = (req.query.filter as FilterType);
+  const filter = req.query.filter as FilterType;
   const page = Number(req.query.page) || 1;
   const limit = Number(req.query.limit) || 10;
   const search = String(req.query.search) || "";
@@ -37,7 +42,7 @@ const getAgentTransactions = catchAsync(async (req: Request, res: Response) => {
     filter,
     page,
     limit,
-    search
+    search,
   );
 
   sendResponse(res, {
@@ -99,6 +104,7 @@ const updatedAgentProfile = catchAsync(async (req, res) => {
   const payload = {
     ...req.body,
     picture: req.file?.path,
+    picturePublicId: req.file?.filename,
   };
 
   const result = await AgentService.updateAgentProfile(agentId, payload);
@@ -107,6 +113,19 @@ const updatedAgentProfile = catchAsync(async (req, res) => {
     statusCode: httpStatus.OK,
     success: true,
     message: "Profile updated successfully",
+    data: result,
+  });
+});
+
+// Remove Agent picture
+const removeAgentPicture = catchAsync(async (req: Request, res: Response) => {
+  const agentId = (req.user as IAuthJwtPayload).sub;
+  const result = await AgentService.removeAgentPicture(agentId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Profile picture removed successfully",
     data: result,
   });
 });
@@ -132,6 +151,7 @@ export const AgentController = {
   getAgentTransactions,
   getAgentProfile,
   updatedAgentProfile,
+  removeAgentPicture,
   changeAgentPassword,
   cashIn,
   cashOut,

@@ -29,7 +29,7 @@ const commissionPayoutSchema = new Schema(
       ref: "User",
     },
   },
-  { timestamps: true }
+  { timestamps: true, versionKey: false }
 );
 
 export const CommissionPayoutModel = model(
