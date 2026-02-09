@@ -400,6 +400,7 @@ const removeAdminPicture = async (adminId: string) => {
 
   admin.picture = null;
   admin.picturePublicId = null;
+  
   await admin.save();
 
   return admin.toObject({ versionKey: false });

@@ -55,7 +55,7 @@ const transfer = catchAsync(async (req: Request, res: Response) => {
   const result = await TransactionService.transfer(
     senderId,
     receiverId,
-    amount
+    amount,
   );
 
   sendResponse(res, {
@@ -67,7 +67,19 @@ const transfer = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMyTransactions = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req.user as IAuthJwtPayload).sub;
+  const auth = req.user as IAuthJwtPayload | undefined;
+
+  if (!auth || !auth.sub) {
+    sendResponse(res, {
+      statusCode: httpStatus.UNAUTHORIZED,
+      success: false,
+      message: "Authentication required",
+      data: null,
+    });
+    return;
+  }
+
+  const userId = auth.sub;
 
   const page = Number(req.query.page) || 1;
   const limit = Number(req.query.limit) || 10;
@@ -78,6 +90,16 @@ const getMyTransactions = catchAsync(async (req: Request, res: Response) => {
   const sortBy = req.query.sortBy as string | undefined;
   const sortOrder = req.query.sortOrder as "asc" | "desc" | undefined;
 
+  console.log("getMyTransactions userId=", userId, {
+    page,
+    limit,
+    type,
+    range,
+    search,
+    sortBy,
+    sortOrder,
+  });
+
   const result = await TransactionService.getMyTransactions(
     userId,
     page,
@@ -86,14 +108,16 @@ const getMyTransactions = catchAsync(async (req: Request, res: Response) => {
     range,
     search,
     sortBy,
-    sortOrder
+    sortOrder,
   );
+
+  console.log("getMyTransactions result:", result);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Transaction  history retrieved",
-    data: result,
+    message: "Transaction history retrieved",
+    data: result ?? { transactions: [], total: 0, totalPages: 0, page, limit },
   });
 });
 
@@ -147,7 +171,7 @@ const getAllTransactions = catchAsync(async (req: Request, res: Response) => {
     type,
     status,
     minAmount,
-    maxAmount
+    maxAmount,
   );
 
   sendResponse(res, {

@@ -49,7 +49,7 @@ const withdraw = async (userId: string, amount: number) => {
 const transfer = async (
   senderId: string,
   receiverId: string,
-  amount: number
+  amount: number,
 ) => {
   const senderWallet = await WalletModel.findOne({
     user: new Types.ObjectId(senderId),
@@ -58,7 +58,7 @@ const transfer = async (
     user: new Types.ObjectId(receiverId),
   });
 
-  const fee = 5;
+  const fee = 0.05;
   const total = amount + fee;
 
   if (!senderWallet || senderWallet.isBlocked)
@@ -73,7 +73,7 @@ const transfer = async (
   if (Number(senderWallet.balance) < total) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Insufficient balance including fee"
+      "Insufficient balance including fee",
     );
   }
 
@@ -105,71 +105,79 @@ const getMyTransactions = async (
   dateRange?: number,
   search?: string,
   sortBy?: string,
-  sortOrder?: "asc" | "desc"
+  sortOrder?: "asc" | "desc",
 ) => {
-  if (!userId) {
-    throw new AppError(httpStatus.BAD_REQUEST, "User ID is required");
+  if (!userId || !Types.ObjectId.isValid(userId)) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid or missing user id");
   }
 
-  // Base Filter
-  const filter: any = {
-    $or: [{ sender: userId }, { receiver: userId }],
-  };
+  const maybeObjectId = Types.ObjectId.isValid(userId)
+    ? new Types.ObjectId(userId)
+    : null;
 
-  // Type Filter (deposit/withdraw/transfer)
-  if (type) filter.type = type;
+  //  Match sender/receiver as ObjectId OR string
+  const senderReceiverOr: any[] = [];
+  if (maybeObjectId) {
+    senderReceiverOr.push(
+      { sender: maybeObjectId },
+      { receiver: maybeObjectId },
+    );
+  }
 
-  // Date Range (last 7/30days)
+  senderReceiverOr.push({ sender: userId }, { receiver: userId });
+  const parts: any[] = [{ $or: senderReceiverOr }];
+  if (type) parts.push({ type });
   if (dateRange) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - dateRange);
-    filter.timestamp = { $gte: startDate };
+    parts.push({
+      $or: [
+        { timestamp: { $gte: startDate } },
+        { createdAt: { $gte: startDate } },
+      ],
+    });
   }
-
-  // Search by email or amount
   if (search) {
     const searchRegex = new RegExp(search, "i");
-
-    filter.$and = [
-      {
-        $or: [{ sender: userId }, { receiver: userId }],
-      },
-      {
-        $or: [
-          { amount: Number(search) || -1 },
-          { "sender.email": searchRegex },
-          { "receiver.email": searchRegex },
-        ],
-      },
-    ];
+    const amountNum = Number(search);
+    const orSearch: any[] = [];
+    if (!Number.isNaN(amountNum)) orSearch.push({ amount: amountNum });
+    orSearch.push(
+      { "sender.email": searchRegex },
+      { "receiver.email": searchRegex },
+    );
+    parts.push({ $or: orSearch });
   }
-
-  // sorting
-  let sortQuery: any = { timestamp: -1 }; //Default
-
-  if (sortBy && sortOrder) {
-    sortQuery = {
-      [sortBy]: sortOrder === "asc" ? 1 : -1,
-    };
-  }
+  const query = parts.length === 1 ? parts[0] : { $and: parts };
+  const sortField = sortBy ?? "timestamp";
+  const sortQuery: any =
+    sortBy && sortOrder
+      ? { [sortField]: sortOrder === "asc" ? 1 : -1 }
+      : { [sortField]: -1 };
 
   // Pagination
   const skip = (page - 1) * limit;
 
   // Query
-  const transactions = await TransactionModel.find(filter)
-    .sort(sortQuery)
-    .skip(skip)
-    .limit(limit)
-    .populate("sender", "email role")
-    .populate("receiver", "email role");
+  const [transactions, total] = await Promise.all([
+    TransactionModel.find(query)
+      .sort(sortQuery)
+      .skip(skip)
+      .limit(limit)
+      .populate("sender", "email role")
+      .populate("receiver", "email role")
+      .lean(),
 
-  const total = await TransactionModel.countDocuments(filter);
-  const totalPages = Math.ceil(total / limit);
+    TransactionModel.countDocuments(query),
+  ]);
+
+  
+
+  const totalPages = Math.ceil(total / limit) || 0;
 
   return {
-    transactions,
-    total,
+    transactions: transactions ?? [],
+    total: total ?? 0,
     totalPages,
     page,
     limit,
@@ -230,7 +238,7 @@ const getAllTransactions = async (
   type?: string,
   status?: string,
   minAmount?: number,
-  maxAmount?: number
+  maxAmount?: number,
 ) => {
   const skip = (page - 1) * limit;
 

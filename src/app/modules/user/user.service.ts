@@ -1,15 +1,14 @@
-import bcryptjs from "bcryptjs";
+import bcrypt from "bcrypt";
 import httpStatus from "http-status-codes";
+import cloudinary from "../../config/cloudinary";
 import { envVars } from "../../config/env";
 import AppError from "../../errorHelpers/appError";
 import { IAuthJwtPayload } from "../../types/auth";
-import { Role } from "../auth/auth.interface";
 import { TransactionModel } from "../transaction/transaction.model";
 import { WalletModel } from "../wallet/wallet.model";
 import { IUser } from "./user.interface";
 import { UserModel } from "./user.model";
 
-// get All users
 const getAllUsers = async (query: {
   page?: number;
   limit?: number;
@@ -24,7 +23,7 @@ const getAllUsers = async (query: {
 
   // search by name or email
   if (query.search) {
-    filters.$0r = [
+    filters.$or = [
       { name: { $regex: query.search, $options: "i" } },
       { email: { $regex: query.search, $options: "i" } },
     ];
@@ -33,9 +32,7 @@ const getAllUsers = async (query: {
   // Status filter
   if (query.status === "blocked") {
     filters.isActive = "BLOCKED";
-  }
-
-  if (query.status === "active") {
+  } else if (query.status === "active") {
     filters.isActive = "ACTIVE";
   }
 
@@ -45,9 +42,7 @@ const getAllUsers = async (query: {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit),
-
     UserModel.countDocuments(filters),
-    
   ]);
 
   const totalPages = Math.ceil(total / limit);
@@ -63,52 +58,149 @@ const getAllUsers = async (query: {
   };
 };
 
-// get single user
-const getSingleUser = async (id: string) => {
+const getUserProfile = async (id: string) => {
   const user = await UserModel.findById(id).select("-password");
-  return {
-    data: user,
-  };
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+  return user;
 };
-//  update user(admin/agent)
+
 const updatedUser = async (
   userId: string,
   payload: Partial<IUser>,
-  decodedToken: IAuthJwtPayload
+  decodedToken: IAuthJwtPayload,
 ) => {
   const ifUserExist = await UserModel.findById(userId);
 
   if (!ifUserExist) {
     throw new AppError(httpStatus.NOT_FOUND, "User not found");
   }
+
   if (payload.email) {
-    throw new AppError(httpStatus.FORBIDDEN, "Email cannot be Updated");
+    throw new AppError(httpStatus.FORBIDDEN, "Email cannot be updated");
   }
 
-  if (payload.role === Role.USER || decodedToken.role === Role.AGENT)
-    throw new AppError(httpStatus.FORBIDDEN, "You are not authorized");
-
-  if (payload.role === Role.AGENT && decodedToken.role === Role.ADMIN) {
+  // Authorization checks (adjust Role enum checks to your app logic)
+  if (payload.role === "USER" || decodedToken.role === "AGENT") {
     throw new AppError(httpStatus.FORBIDDEN, "You are not authorized");
   }
-  if (payload.isActive || payload.isDeleted || payload.isVerified) {
-    if (decodedToken.role === Role.USER || decodedToken.role === Role.AGENT) {
+
+  if (payload.role === "AGENT" && decodedToken.role === "ADMIN") {
+    throw new AppError(httpStatus.FORBIDDEN, "You are not authorized");
+  }
+
+  if (
+    payload.isActive !== undefined ||
+    payload.isDeleted !== undefined ||
+    payload.isVerified !== undefined
+  ) {
+    if (decodedToken.role === "USER" || decodedToken.role === "AGENT") {
       throw new AppError(httpStatus.FORBIDDEN, "You are not authorized");
     }
   }
-  //  pass hashing
+
   if (payload.password) {
-    payload.password = await bcryptjs.hash(
+    payload.password = await bcrypt.hash(
       payload.password,
-      envVars.BCRYPT_SALT_ROUND
+      Number(envVars.BCRYPT_SALT_ROUND),
     );
   }
+
   const newUpdateUser = await UserModel.findByIdAndUpdate(userId, payload, {
     new: true,
     runValidators: true,
-  });
+  }).select("-password");
 
   return newUpdateUser;
+};
+
+const updateUserProfile = async (
+  userId: string,
+  payload: {
+    name?: string;
+    phone?: string;
+    picture?: string | null;
+    picturePublicId?: string | null;
+  },
+) => {
+  const user = await UserModel.findById(userId).select("-password");
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  // remove old picture if new provided
+  if (payload.picture && payload.picturePublicId && user.picturePublicId) {
+    try {
+      await cloudinary.uploader.destroy(user.picturePublicId);
+    } catch (error) {
+      console.error("Failed to remove old picture", error);
+    }
+  }
+
+  if (payload.name !== undefined) user.name = payload.name;
+  if (payload.phone !== undefined) user.phone = payload.phone;
+
+  if (payload.picture !== undefined) {
+    user.picture = payload.picture;
+    user.picturePublicId = payload.picturePublicId ?? null;
+  }
+
+  await user.save();
+  return user.toObject({ versionKey: false });
+};
+
+const removeUserPicture = async (userId: string) => {
+  const user = await UserModel.findById(userId);
+
+  if (!user) throw new AppError(httpStatus.NOT_FOUND, "User not found");
+
+  if (user.picturePublicId) {
+    try {
+      await cloudinary.uploader.destroy(user.picturePublicId);
+    } catch (error) {
+      console.error("Failed to remove picture:", error);
+    }
+  }
+
+  user.picture = null;
+  user.picturePublicId = null;
+
+  await user.save();
+
+  return user.toObject({ versionKey: false });
+};
+
+const changePassword = async (
+  userId: string,
+  oldPassword: string,
+  newPassword: string,
+) => {
+  const user = await UserModel.findById(userId).select("+password");
+
+  if (!user) throw new AppError(httpStatus.NOT_FOUND, "User not found");
+
+  if (!user.password) {
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "User has no password set",
+    );
+  }
+
+  const isMatch = await bcrypt.compare(oldPassword, user.password);
+  if (!isMatch) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Old password incorrect");
+  }
+
+  user.password = await bcrypt.hash(
+    newPassword,
+    Number(envVars.BCRYPT_SALT_ROUND),
+  );
+  await user.save();
+
+  return null;
 };
 
 const getMe = async (userId: string) => {
@@ -120,13 +212,16 @@ const getMe = async (userId: string) => {
 
   const wallet = await WalletModel.findOne({ user: userId }).lean();
 
-  // Fetch recentTransactions
   const recentTransactions = await TransactionModel.find({
     $or: [{ sender: userId }, { receiver: userId }],
   })
-    .sort({ Timestamp: -1 })
+    .sort({ timestamp: -1 })
     .limit(5)
-    .select("type amount status timestamp");
+    .select("type amount status timestamp sender receiver")
+    .populate({ path: "sender", select: "_id email role" })
+    .populate({ path: "receiver", select: "_id email role" })
+    .lean();
+
   return {
     ...user,
     walletBalance: wallet?.balance ?? 0,
@@ -134,10 +229,9 @@ const getMe = async (userId: string) => {
   };
 };
 
-// update my profile
 const updatedMyProfile = async (
   userId: string,
-  payload: Pick<IUser, "name" | "phone">
+  payload: Pick<IUser, "name" | "phone">,
 ) => {
   const user = await UserModel.findByIdAndUpdate(
     userId,
@@ -145,7 +239,7 @@ const updatedMyProfile = async (
       ...(payload.name && { name: payload.name }),
       ...(payload.phone && { phone: payload.phone }),
     },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   ).select("-password");
 
   if (!user) {
@@ -154,16 +248,19 @@ const updatedMyProfile = async (
 
   return user;
 };
-// Delete user
-const deleteUser = async (id: string): Promise<IUser | null> => {
+
+const deleteUser = async (id: string) => {
   return UserModel.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
 };
 
 export const UserService = {
   getAllUsers,
-  getSingleUser,
+  getUserProfile,
   updatedUser,
-  deleteUser,
+  updateUserProfile,
+  removeUserPicture,
+  changePassword,
   getMe,
   updatedMyProfile,
+  deleteUser,
 };
